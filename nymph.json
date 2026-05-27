@@ -1,0 +1,157 @@
+{
+  "manifest_version": 1,
+  "id": "nymphs-world",
+  "name": "Nymphs World",
+  "short_name": "NW",
+  "version": "0.1.0",
+  "description": "Page-first worldbuilding vault for game worlds, Markdown pages, wikilinks, backlinks, references, and production readiness.",
+  "category": "tool",
+  "kind": "worldbuilding",
+  "packaging": "repo",
+  "repo": {
+    "url": "https://github.com/nymphnerds/nymphs-world.git",
+    "branch": "main"
+  },
+  "source": {
+    "type": "repo",
+    "repo": "https://github.com/nymphnerds/nymphs-world.git",
+    "ref": "main"
+  },
+  "install": {
+    "root": "$HOME/Nymphs-World",
+    "entrypoint": "scripts/install_nymphs_world.sh",
+    "version_marker": "$HOME/Nymphs-World/.nymph-module-version",
+    "installed_markers": [
+      "$HOME/Nymphs-World/.nymph-module-version"
+    ]
+  },
+  "runtime": {
+    "host": "127.0.0.1",
+    "port": 8098,
+    "frontend_url": "http://127.0.0.1:8098",
+    "backend_url": "http://127.0.0.1:8098",
+    "health_url": "http://127.0.0.1:8098/health",
+    "server_info_url": "http://127.0.0.1:8098/server_info"
+  },
+  "artifacts": {
+    "data_root": "$HOME/NymphsData/nymphs-world",
+    "projects_root": "$HOME/NymphsData/nymphs-world/projects",
+    "config_root": "$HOME/NymphsData/config/nymphs-world",
+    "logs_root": "$HOME/NymphsData/logs/nymphs-world"
+  },
+  "entrypoints": {
+    "install": "scripts/install_nymphs_world.sh",
+    "update": "scripts/nymphs_world_update.sh",
+    "status": "scripts/nymphs_world_status.sh",
+    "start": "scripts/nymphs_world_start.sh",
+    "stop": "scripts/nymphs_world_stop.sh",
+    "open": "scripts/nymphs_world_open.sh",
+    "logs": "scripts/nymphs_world_logs.sh",
+    "open_projects": "scripts/nymphs_world_open_projects.sh",
+    "smoke_test": "scripts/nymphs_world_smoke_test.sh",
+    "uninstall": "scripts/nymphs_world_uninstall.sh"
+  },
+  "capabilities": [
+    "install",
+    "status",
+    "start",
+    "stop",
+    "open",
+    "logs",
+    "uninstall"
+  ],
+  "ui": {
+    "sort_order": 45,
+    "standard_lifecycle_rail": true,
+    "manager_ui": {
+      "type": "local_url",
+      "title": "Nymphs World",
+      "url": "http://127.0.0.1:8098",
+      "requires_running": true,
+      "start_action": "open",
+      "stop_action": "stop"
+    },
+    "manager_actions": [
+      {
+        "id": "open",
+        "label": "Open UI",
+        "entrypoint": "open",
+        "result": "open_in_manager"
+      },
+      {
+        "id": "smoke_test",
+        "label": "Smoke Test",
+        "entrypoint": "smoke_test",
+        "result": "show_output"
+      },
+      {
+        "id": "open_projects",
+        "label": "Open Worlds",
+        "entrypoint": "open_projects",
+        "result": "open_directory"
+      },
+      {
+        "id": "start",
+        "label": "Start",
+        "entrypoint": "start",
+        "result": "show_output"
+      },
+      {
+        "id": "stop",
+        "label": "Stop",
+        "entrypoint": "stop",
+        "result": "show_output"
+      },
+      {
+        "id": "logs",
+        "label": "Logs",
+        "entrypoint": "logs",
+        "result": "open_notepad"
+      }
+    ]
+  },
+  "overview": {
+    "body": "Nymphs World is a local-first worldbuilding room. It starts with project folders, Markdown pages, YAML frontmatter, wikilinks, backlinks, assets, and diagnostics. Generation modules remain contextual actions attached to pages later; this module owns the vault spine first.",
+    "works_with": [
+      "NymphsCore Manager",
+      "Nymphs Brain for future page-aware assistance",
+      "Nymphs Image, TRELLIS.2, and Pixal3D for future page-bound production actions"
+    ],
+    "requirements": [
+      "NymphsCore base WSL runtime",
+      "Python 3 from the base runtime"
+    ],
+    "compatibility": [
+      "Stores world project data under $HOME/NymphsData/nymphs-world",
+      "Uses readable Markdown and JSON files",
+      "Does not require model downloads for the first vault slice"
+    ],
+    "links": [
+      {
+        "label": "Nymphs module standard",
+        "url": "https://github.com/nymphnerds/NymphsCore/blob/main/docs/NYMPHS_MODULE_MAKING_GUIDE.md"
+      }
+    ]
+  },
+  "uninstall": {
+    "supports_purge": true,
+    "supports_data_delete": true,
+    "requires_confirmation": true,
+    "dry_run_arg": "--dry-run",
+    "confirm_arg": "--yes",
+    "purge_arg": "--purge",
+    "data_only_arg": "--data-only",
+    "preserve_by_default": [
+      "projects",
+      "config",
+      "logs"
+    ],
+    "removes_by_default": [
+      "app runtime files",
+      "module scripts"
+    ]
+  },
+  "update_policy": {
+    "channel": "experimental"
+  }
+}

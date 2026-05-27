@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nymphs World</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #071011;
+      --panel: #0b1718;
+      --panel-2: #101c1d;
+      --line: #26484a;
+      --text: #ecf7f4;
+      --muted: #93b5af;
+      --accent: #29e6da;
+      --lime: #97df48;
+      --amber: #ffd166;
+      --rose: #ff7d5c;
+      --blue: #8ed8ff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      letter-spacing: 0;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #0f1a1c;
+      color: var(--text);
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      border-color: #397174;
+      background: #122426;
+    }
+
+    button:disabled {
+      cursor: default;
+      opacity: 0.45;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: #081314;
+      color: var(--text);
+      padding: 8px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 420px;
+      resize: vertical;
+      line-height: 1.5;
+      font-family: "Cascadia Mono", "Consolas", monospace;
+      font-size: 13px;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 260px minmax(420px, 1fr) 300px;
+      height: 100vh;
+      min-width: 860px;
+    }
+
+    .rail,
+    .side {
+      min-width: 0;
+      border-right: 1px solid #163133;
+      background: var(--panel);
+      overflow: hidden;
+    }
+
+    .side {
+      border-right: 0;
+      border-left: 1px solid #163133;
+    }
+
+    .rail-inner,
+    .side-inner,
+    .main {
+      height: 100%;
+      overflow: auto;
+    }
+
+    .rail-inner,
+    .side-inner {
+      padding: 18px;
+    }
+
+    .main {
+      padding: 18px 20px 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .mark {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--lime);
+      border-radius: 8px;
+      color: var(--lime);
+      font: 700 14px "Cascadia Mono", monospace;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      line-height: 1.15;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    h2 {
+      font-size: 15px;
+      color: var(--accent);
+      font-family: "Cascadia Mono", monospace;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      font-size: 16px;
+    }
+
+    .muted {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .mono {
+      color: var(--accent);
+      font-family: "Cascadia Mono", monospace;
+      font-size: 12px;
+    }
+
+    .toolbar,
+    .row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toolbar {
+      flex-wrap: wrap;
+      margin: 14px 0;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid #1d393b;
+      border-radius: 6px;
+      background: #0a1516;
+      padding: 10px;
+    }
+
+    .item.is-active {
+      border-color: var(--accent);
+      background: #0d2021;
+    }
+
+    .item-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 20px;
+      border: 1px solid #35595b;
+      border-radius: 999px;
+      padding: 2px 7px;
+      color: #cfe7e2;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .pill.good {
+      border-color: #497427;
+      color: var(--lime);
+    }
+
+    .pill.warn {
+      border-color: #936c22;
+      color: var(--amber);
+    }
+
+    .pill.bad {
+      border-color: #91412f;
+      color: var(--rose);
+    }
+
+    .section {
+      margin-top: 22px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .page-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 0;
+    }
+
+    .editor-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0 12px;
+    }
+
+    .preview {
+      margin-top: 18px;
+      border-top: 1px solid #173436;
+      padding-top: 16px;
+      color: #dcece8;
+      line-height: 1.55;
+    }
+
+    .preview h1 {
+      font-size: 26px;
+      margin: 0 0 14px;
+    }
+
+    .preview h2 {
+      margin: 18px 0 8px;
+      color: var(--blue);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      text-transform: none;
+    }
+
+    .preview p {
+      margin: 8px 0;
+    }
+
+    .preview code {
+      color: var(--amber);
+      font-family: "Cascadia Mono", monospace;
+    }
+
+    .diagnostic {
+      border: 1px solid #284446;
+      border-radius: 6px;
+      padding: 10px;
+      background: #091415;
+    }
+
+    .diagnostic.ready {
+      border-color: #416d2a;
+    }
+
+    .diagnostic.warning {
+      border-color: #72531d;
+    }
+
+    .diagnostic.error {
+      border-color: #793726;
+    }
+
+    .split-form {
+      display: grid;
+      grid-template-columns: 1fr 118px;
+      gap: 8px;
+    }
+
+    .empty {
+      border: 1px dashed #315659;
+      border-radius: 6px;
+      padding: 14px;
+      color: var(--muted);
+      background: #091415;
+    }
+
+    @media (max-width: 980px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        height: auto;
+        min-width: 0;
+      }
+
+      .rail,
+      .side {
+        border: 0;
+        border-bottom: 1px solid #163133;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="rail">
+      <div class="rail-inner">
+        <div class="brand">
+          <div class="mark">NW</div>
+          <div>
+            <h1>Nymphs World</h1>
+            <div class="muted" id="serverLine">Starting</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button id="refreshBtn">Refresh</button>
+          <button id="demoBtn">Demo World</button>
+        </div>
+
+        <div class="section">
+          <h2>Projects</h2>
+          <div class="field" style="margin-top: 12px">
+            <input id="projectTitle" placeholder="World title">
+            <button id="createProjectBtn">Create Project</button>
+          </div>
+          <div class="list" id="projectList"></div>
+        </div>
+
+        <div class="section">
+          <h2>Pages</h2>
+          <div class="split-form" style="margin-top: 12px">
+            <input id="pageTitle" placeholder="Page title">
+            <select id="pageType">
+              <option value="character">character</option>
+              <option value="place">place</option>
+              <option value="faction">faction</option>
+              <option value="story_arc">story arc</option>
+              <option value="quest">quest</option>
+              <option value="beat">beat</option>
+              <option value="scene">scene</option>
+              <option value="dialogue_thread">dialogue</option>
+              <option value="item">item</option>
+              <option value="system">system</option>
+              <option value="lore">lore</option>
+              <option value="scratch">scratch</option>
+            </select>
+          </div>
+          <button id="createPageBtn">Create Page</button>
+          <div class="list" id="pageList"></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <div class="mono" id="projectLabel">// no project selected</div>
+          <h1 id="pageHeading">Choose or create a world</h1>
+          <div class="page-meta" id="pageMeta"></div>
+        </div>
+        <div class="toolbar" style="margin: 0">
+          <button id="saveBtn" disabled>Save</button>
+        </div>
+      </div>
+
+      <div id="editorHost" class="empty">Create or open a project to begin.</div>
+      <div class="preview" id="previewHost"></div>
+    </main>
+
+    <aside class="side">
+      <div class="side-inner">
+        <h2>Diagnostics</h2>
+        <div class="page-meta" id="countMeta"></div>
+        <div class="list" id="diagnosticList"></div>
+
+        <div class="section">
+          <h2>Backlinks</h2>
+          <div class="list" id="backlinkList"></div>
+        </div>
+
+        <div class="section">
+          <h2>Assets</h2>
+          <div class="list" id="assetList"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const state = {
+      projects: [],
+      project: null,
+      index: null,
+      page: null,
+      dirty: false
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    async function api(path, options = {}) {
+      const response = await fetch(path, {
+        headers: { "Content-Type": "application/json" },
+        ...options
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || response.statusText);
+      }
+      return data;
+    }
+
+    function pill(text, kind = "") {
+      return `<span class="pill ${kind}">${escapeHtml(text)}</span>`;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function markdownPreview(source) {
+      const body = String(source || "").replace(/^---[\s\S]*?---\s*/, "");
+      return body
+        .split("\n")
+        .map((line) => {
+          if (line.startsWith("# ")) return `<h1>${escapeHtml(line.slice(2))}</h1>`;
+          if (line.startsWith("## ")) return `<h2>${escapeHtml(line.slice(3))}</h2>`;
+          if (line.startsWith("- ")) return `<p>&bull; ${renderInline(line.slice(2))}</p>`;
+          if (!line.trim()) return "";
+          return `<p>${renderInline(line)}</p>`;
+        })
+        .join("");
+    }
+
+    function renderInline(value) {
+      return escapeHtml(value).replace(/\[\[([^\]]+)\]\]/g, "<code>[[$1]]</code>");
+    }
+
+    async function loadServerInfo() {
+      const info = await api("/server_info");
+      $("serverLine").textContent = info.projects_root;
+    }
+
+    async function loadProjects() {
+      const data = await api("/api/projects");
+      state.projects = data.projects || [];
+      renderProjects();
+      if (!state.project && state.projects.length) {
+        await selectProject(state.projects[0].id);
+      }
+    }
+
+    function renderProjects() {
+      const list = $("projectList");
+      if (!state.projects.length) {
+        list.innerHTML = `<div class="empty">No worlds yet.</div>`;
+        return;
+      }
+      list.innerHTML = state.projects.map((project) => `
+        <button class="item ${state.project?.id === project.id ? "is-active" : ""}" data-project="${escapeHtml(project.id)}">
+          <div class="item-title">
+            <span>${escapeHtml(project.title)}</span>
+            <span class="pill">${escapeHtml(project.id)}</span>
+          </div>
+          <div class="muted">${escapeHtml(project.updated_at || "")}</div>
+        </button>
+      `).join("");
+      list.querySelectorAll("[data-project]").forEach((button) => {
+        button.addEventListener("click", () => selectProject(button.dataset.project));
+      });
+    }
+
+    async function selectProject(projectId) {
+      const index = await api(`/api/projects/${encodeURIComponent(projectId)}/index`);
+      state.project = index.project;
+      state.index = index;
+      state.page = null;
+      state.dirty = false;
+      renderAll();
+      if (index.pages?.length) {
+        await selectPage(index.pages[0].id);
+      }
+    }
+
+    async function selectPage(pageId) {
+      if (!state.project) return;
+      state.page = await api(`/api/projects/${encodeURIComponent(state.project.id)}/pages/${encodeURIComponent(pageId)}`);
+      state.dirty = false;
+      renderAll();
+    }
+
+    function renderAll() {
+      renderProjects();
+      renderPages();
+      renderEditor();
+      renderDiagnostics();
+      renderAssets();
+    }
+
+    function renderPages() {
+      const list = $("pageList");
+      const pages = state.index?.pages || [];
+      if (!state.project) {
+        list.innerHTML = `<div class="empty">No project selected.</div>`;
+        return;
+      }
+      if (!pages.length) {
+        list.innerHTML = `<div class="empty">No pages yet.</div>`;
+        return;
+      }
+      list.innerHTML = pages.map((page) => `
+        <button class="item ${state.page?.id === page.id ? "is-active" : ""}" data-page="${escapeHtml(page.id)}">
+          <div class="item-title">
+            <span>${escapeHtml(page.title)}</span>
+            <span class="pill">${escapeHtml(page.type || "none")}</span>
+          </div>
+          <div class="muted">${escapeHtml(page.path)}</div>
+        </button>
+      `).join("");
+      list.querySelectorAll("[data-page]").forEach((button) => {
+        button.addEventListener("click", () => selectPage(button.dataset.page));
+      });
+    }
+
+    function renderEditor() {
+      $("projectLabel").textContent = state.project ? `// ${state.project.title}` : "// no project selected";
+      $("saveBtn").disabled = !state.page || !state.dirty;
+      $("pageHeading").textContent = state.page ? state.page.title : "Choose or create a world";
+      $("pageMeta").innerHTML = state.page
+        ? [
+            pill(state.page.type || "no type", state.page.type ? "" : "warn"),
+            pill(state.page.status || "draft"),
+            pill(state.page.path || "")
+          ].join("")
+        : "";
+
+      if (!state.page) {
+        $("editorHost").className = "empty";
+        $("editorHost").innerHTML = state.project ? "Choose or create a page." : "Create or open a project to begin.";
+        $("previewHost").innerHTML = "";
+        renderBacklinks();
+        return;
+      }
+
+      $("editorHost").className = "";
+      $("editorHost").innerHTML = `<textarea id="pageEditor" spellcheck="false">${escapeHtml(state.page.content || "")}</textarea>`;
+      $("previewHost").innerHTML = markdownPreview(state.page.content || "");
+      $("pageEditor").addEventListener("input", (event) => {
+        state.page.content = event.target.value;
+        state.dirty = true;
+        $("saveBtn").disabled = false;
+        $("previewHost").innerHTML = markdownPreview(state.page.content || "");
+      });
+      renderBacklinks();
+    }
+
+    function renderDiagnostics() {
+      const counts = state.index?.counts;
+      $("countMeta").innerHTML = counts
+        ? [
+            pill(`${counts.pages} pages`, "good"),
+            pill(`${counts.broken_links} broken`, counts.broken_links ? "warn" : "good"),
+            pill(`${counts.diagnostics} needs work`, counts.diagnostics ? "warn" : "good")
+          ].join("")
+        : "";
+      const diagnostics = state.index?.diagnostics || [];
+      $("diagnosticList").innerHTML = diagnostics.map((diagnostic) => `
+        <div class="diagnostic ${escapeHtml(diagnostic.severity)}">
+          <div class="item-title">
+            <span>${escapeHtml(diagnostic.title)}</span>
+            <span class="pill ${diagnostic.severity === "ready" ? "good" : "warn"}">${escapeHtml(diagnostic.severity)}</span>
+          </div>
+          <div class="muted">${escapeHtml(diagnostic.detail)}</div>
+          ${diagnostic.path ? `<div class="mono">${escapeHtml(diagnostic.path)}</div>` : ""}
+        </div>
+      `).join("") || `<div class="empty">No diagnostics.</div>`;
+    }
+
+    function renderBacklinks() {
+      if (!state.page) {
+        $("backlinkList").innerHTML = `<div class="empty">No page selected.</div>`;
+        return;
+      }
+      const ids = state.page.backlinks || [];
+      const pages = state.index?.pages || [];
+      const links = ids.map((id) => pages.find((page) => page.id === id)).filter(Boolean);
+      $("backlinkList").innerHTML = links.map((page) => `
+        <button class="item" data-page="${escapeHtml(page.id)}">
+          <div class="item-title"><span>${escapeHtml(page.title)}</span>${pill(page.type || "page")}</div>
+          <div class="muted">${escapeHtml(page.path)}</div>
+        </button>
+      `).join("") || `<div class="empty">No backlinks yet.</div>`;
+      $("backlinkList").querySelectorAll("[data-page]").forEach((button) => {
+        button.addEventListener("click", () => selectPage(button.dataset.page));
+      });
+    }
+
+    function renderAssets() {
+      const assets = state.index?.assets || [];
+      $("assetList").innerHTML = assets.map((asset) => `
+        <div class="item">
+          <div class="item-title"><span>${escapeHtml(asset.path)}</span>${pill(asset.extension || "asset")}</div>
+          <div class="muted">${escapeHtml(asset.entity_id || "library")}</div>
+        </div>
+      `).join("") || `<div class="empty">No assets attached.</div>`;
+    }
+
+    async function createProject() {
+      const title = $("projectTitle").value.trim();
+      if (!title) return;
+      const project = await api("/api/projects", {
+        method: "POST",
+        body: JSON.stringify({ title })
+      });
+      $("projectTitle").value = "";
+      await loadProjects();
+      await selectProject(project.id);
+    }
+
+    async function createDemo() {
+      const project = await api("/api/demo", { method: "POST", body: "{}" });
+      await loadProjects();
+      await selectProject(project.id);
+    }
+
+    async function createPage() {
+      if (!state.project) return;
+      const title = $("pageTitle").value.trim();
+      if (!title) return;
+      const page = await api(`/api/projects/${encodeURIComponent(state.project.id)}/pages`, {
+        method: "POST",
+        body: JSON.stringify({
+          title,
+          type: $("pageType").value,
+          summary: ""
+        })
+      });
+      $("pageTitle").value = "";
+      await selectProject(state.project.id);
+      await selectPage(page.id);
+    }
+
+    async function savePage() {
+      if (!state.project || !state.page) return;
+      const saved = await api(`/api/projects/${encodeURIComponent(state.project.id)}/pages/${encodeURIComponent(state.page.id)}`, {
+        method: "PUT",
+        body: JSON.stringify({ content: state.page.content })
+      });
+      state.page = saved;
+      state.dirty = false;
+      await selectProject(state.project.id);
+      await selectPage(saved.id);
+    }
+
+    $("refreshBtn").addEventListener("click", async () => {
+      const selected = state.project?.id;
+      await loadProjects();
+      if (selected) await selectProject(selected);
+    });
+    $("demoBtn").addEventListener("click", createDemo);
+    $("createProjectBtn").addEventListener("click", createProject);
+    $("createPageBtn").addEventListener("click", createPage);
+    $("saveBtn").addEventListener("click", savePage);
+
+    (async function init() {
+      try {
+        await loadServerInfo();
+        await loadProjects();
+        renderAll();
+      } catch (error) {
+        $("serverLine").textContent = error.message;
+      }
+    })();
+  </script>
+</body>
+</html>
