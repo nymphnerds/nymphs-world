@@ -61,7 +61,7 @@
     "uninstall"
   ],
   "ui": {
-    "sort_order": 45,
+    "sort_order": 48,
     "standard_lifecycle_rail": true,
     "manager_ui": {
       "type": "local_url",
