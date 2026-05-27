@@ -13,7 +13,7 @@ from urllib.parse import unquote, urlparse
 
 MODULE_ID = "nymphs-world"
 MODULE_NAME = "Nymphs World"
-MODULE_VERSION = "0.1.0"
+MODULE_VERSION = "0.1.1"
 WIKILINK_RE = re.compile(r"\[\[([^\]\n]+)\]\]")
 MEDIA_EXTENSIONS = {
     ".png",
@@ -450,7 +450,7 @@ def build_index(project_root: Path) -> dict[str, object]:
 
 
 class NymphsWorldHandler(SimpleHTTPRequestHandler):
-    server_version = "NymphsWorld/0.1"
+    server_version = "NymphsWorld/0.1.1"
 
     @property
     def projects_root(self) -> Path:
