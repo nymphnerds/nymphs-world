@@ -4,7 +4,7 @@
   "name": "Nymphs World",
   "short_name": "NW",
   "version": "0.1.0",
-  "description": "Page-first worldbuilding vault for game worlds, Markdown pages, wikilinks, backlinks, references, and production readiness.",
+  "description": "Private development build of the Nymphs World page-first worldbuilding vault.",
   "category": "tool",
   "kind": "worldbuilding",
   "packaging": "repo",
@@ -111,27 +111,7 @@
     ]
   },
   "overview": {
-    "body": "Nymphs World is a local-first worldbuilding room. It starts with project folders, Markdown pages, YAML frontmatter, wikilinks, backlinks, assets, and diagnostics. Generation modules remain contextual actions attached to pages later; this module owns the vault spine first.",
-    "works_with": [
-      "NymphsCore Manager",
-      "Nymphs Brain for future page-aware assistance",
-      "Nymphs Image, TRELLIS.2, and Pixal3D for future page-bound production actions"
-    ],
-    "requirements": [
-      "NymphsCore base WSL runtime",
-      "Python 3 from the base runtime"
-    ],
-    "compatibility": [
-      "Stores world project data under $HOME/NymphsData/nymphs-world",
-      "Uses readable Markdown and JSON files",
-      "Does not require model downloads for the first vault slice"
-    ],
-    "links": [
-      {
-        "label": "Nymphs module standard",
-        "url": "https://github.com/nymphnerds/NymphsCore/blob/main/docs/NYMPHS_MODULE_MAKING_GUIDE.md"
-      }
-    ]
+    "body": "Private dev build. Current slice: local project folders, Markdown pages, wikilinks, backlinks, and vault diagnostics."
   },
   "uninstall": {
     "supports_purge": true,
