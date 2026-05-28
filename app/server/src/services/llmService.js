@@ -1,6 +1,7 @@
 import axios from 'axios';
 import config from '../config.js';
 import { executeTool, getToolDefinitions } from './toolService.js';
+import { fetchCodexModels, sendCodexCreativeTurn } from './codexService.js';
 
 // Default tool permissions (used when not provided)
 const defaultPermissions = {
@@ -41,11 +42,23 @@ function normalizeBaseUrl(url) {
   return url.replace(/\/+$/, '');
 }
 
+function isCodexProvider(settings) {
+  return settings?.providerId === 'codex';
+}
+
+function throwCodexAdapterPending() {
+  throw new Error('Codex Sign In is detected, but this feature is not routed through the Codex app-server adapter yet. Use text chat, completion, or document generation first.');
+}
+
 /**
  * Fetch available models from LLM server
  * @param {Object} settings - User settings with baseUrl, apiKey, serverType
  */
 async function fetchModels(settings) {
+  if (isCodexProvider(settings)) {
+    return fetchCodexModels(settings);
+  }
+
   const baseUrl = normalizeBaseUrl(settings.baseUrl);
   if (!baseUrl) {
     throw new Error('No base URL configured. Please set your LLM provider URL in Settings.');
@@ -126,6 +139,17 @@ function getToolActivityLabel(toolName, args) {
  * @param {Object} settings - User LLM settings (baseUrl, apiKey, modelName, etc.)
  */
 async function sendChatMessage(messages, documentContent, systemPrompt, permissions, settings, username) {
+  if (isCodexProvider(settings)) {
+    return sendCodexCreativeTurn({
+      messages,
+      documentContent,
+      systemPrompt,
+      settings,
+      username,
+      purpose: 'chat',
+    });
+  }
+
   const defaultPrompt = 'You are a helpful AI assistant for a game worldbuilder tool. The user is working on a document with the following content. Use this context to assist with writing, worldbuilding, lore, character development, and quest design.';
   const prompt = systemPrompt && systemPrompt.trim() ? systemPrompt.trim() : defaultPrompt;
 
@@ -755,6 +779,10 @@ async function generateDocument(prompt, docType, documentContext, settings) {
  * @param {Object} settings - User LLM settings
  */
 async function transcribeImage(imageBase64, customPrompt, settings) {
+  if (isCodexProvider(settings)) {
+    throwCodexAdapterPending();
+  }
+
   const defaultPrompt = 'Transcribe all the text visible in this image. Preserve the original formatting, paragraph structure, line breaks, and any handwritten style. If the text is handwritten, do your best to accurately transcribe it. Output only the transcribed text with no additional commentary.';
   const prompt = customPrompt && customPrompt.trim() ? customPrompt.trim() : defaultPrompt;
 

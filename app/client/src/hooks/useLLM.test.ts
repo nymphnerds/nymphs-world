@@ -11,6 +11,8 @@ import { renderHook, act } from '@testing-library/react';
 vi.mock('../services/api', () => ({
   sendChat: vi.fn(),
   fetchModels: vi.fn(),
+  getCodexProbe: vi.fn(),
+  getCodexStatus: vi.fn(),
   getSettings: vi.fn(),
   testConnection: vi.fn(),
   saveUserSettings: vi.fn(),

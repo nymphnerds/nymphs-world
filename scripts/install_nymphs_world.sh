@@ -28,6 +28,17 @@ trap cleanup EXIT
 echo "Installing ${NYMPHS_WORLD_MODULE_NAME} ${module_version}..."
 echo "install_root=${NYMPHS_WORLD_INSTALL_DIR}"
 
+codex_bin="$(nymphs_world_codex_bin)"
+if [[ -n "${codex_bin}" ]]; then
+  codex_version="$(nymphs_world_codex_version "${codex_bin}" || true)"
+  echo "Codex optional dependency detected: ${codex_bin} ${codex_version}"
+else
+  echo "NOTE: Codex Sign In is optional and not installed."
+  echo "      Local/Brain and OpenRouter/API providers will still work."
+  echo "      To enable ChatGPT subscription-backed generation, install the official Codex CLI:"
+  echo "      curl -fsSL https://chatgpt.com/codex/install.sh | sh"
+fi
+
 if [[ -f "${NYMPHS_WORLD_MARKER_FILE}" ]]; then
   "${SCRIPT_DIR}/nymphs_world_stop.sh" >/dev/null 2>&1 || true
 fi

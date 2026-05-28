@@ -14,9 +14,31 @@ state=available
 health=unavailable
 node_ready=false
 detail="${NYMPHS_WORLD_MODULE_NAME} is not installed."
+codex_cli=false
+codex_logged_in=false
+codex_app_server=false
+codex_ready=false
+codex_version=not-installed
+codex_bin="$(nymphs_world_codex_bin)"
 
 if command -v node >/dev/null 2>&1; then
   node_ready=true
+fi
+
+if [[ -n "${codex_bin}" ]]; then
+  codex_cli=true
+  codex_version="$(nymphs_world_codex_version "${codex_bin}" || true)"
+  [[ -n "${codex_version}" ]] || codex_version=unknown
+  if nymphs_world_codex_logged_in "${codex_bin}"; then
+    codex_logged_in=true
+  fi
+  if nymphs_world_codex_app_server_ready "${codex_bin}"; then
+    codex_app_server=true
+  fi
+fi
+
+if [[ "${codex_cli}" == "true" && "${codex_logged_in}" == "true" && "${codex_app_server}" == "true" ]]; then
+  codex_ready=true
 fi
 
 if [[ -f "${NYMPHS_WORLD_MARKER_FILE}" ]]; then
@@ -71,6 +93,11 @@ runtime_present=${runtime_present}
 data_present=${data_present}
 version=${version}
 node_ready=${node_ready}
+codex_cli=${codex_cli}
+codex_version=${codex_version}
+codex_logged_in=${codex_logged_in}
+codex_app_server=${codex_app_server}
+codex_ready=${codex_ready}
 running=${running}
 state=${state}
 health=${health}

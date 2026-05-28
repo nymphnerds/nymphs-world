@@ -1,6 +1,7 @@
 import express from 'express';
 import config from '../config.js';
 import authMiddleware from '../middleware/authMiddleware.js';
+import { getCodexStatus, readCodexAccount } from '../services/codexService.js';
 
 const router = express.Router();
 
@@ -30,8 +31,8 @@ router.post('/user', authMiddleware, (req, res) => {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  const { providerId, serverType, baseUrl, apiKey, modelName, maxTokens, contextWindow, temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed, systemPrompt, toolPermissions, zImage } = req.body.settings || req.body;
-  const settings = config.saveUserSettings(username, { providerId, serverType, baseUrl, apiKey, modelName, maxTokens, contextWindow, temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed, systemPrompt, toolPermissions, zImage });
+  const { providerId, serverType, baseUrl, apiKey, codex, modelName, maxTokens, contextWindow, temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed, systemPrompt, toolPermissions, zImage } = req.body.settings || req.body;
+  const settings = config.saveUserSettings(username, { providerId, serverType, baseUrl, apiKey, codex, modelName, maxTokens, contextWindow, temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed, systemPrompt, toolPermissions, zImage });
   res.json({ settings });
 });
 
@@ -45,7 +46,30 @@ router.post('/test', authMiddleware, async (req, res) => {
   
   try {
     // Use provided settings or load from user's saved settings
-    const settings = req.body.baseUrl ? req.body : config.loadUserSettings(username);
+    const settings = req.body.settings || (req.body.baseUrl || req.body.providerId ? req.body : config.loadUserSettings(username));
+    if (settings.providerId === 'codex') {
+      const status = await getCodexStatus();
+      if (!status.available || !status.loggedIn || !status.appServerDaemon.available) {
+        return res.json({
+          success: false,
+          message: status.warnings?.[0] || status.loginLabel || 'Codex Sign In is not ready yet.',
+          details: status,
+        });
+      }
+
+      const probe = await readCodexAccount();
+      const modelIds = probe.models.map((model) => model.id).filter(Boolean);
+      const defaultModel = probe.models.find((model) => model.isDefault)?.id || modelIds[0] || null;
+      return res.json({
+        success: Boolean(probe.account && modelIds.length > 0),
+        message: probe.account
+          ? `Codex ready${defaultModel ? ` (${defaultModel})` : ''}`
+          : 'Codex is available, but no ChatGPT/Codex account is active.',
+        models: modelIds,
+        details: { status, probe },
+      });
+    }
+
     const { serverType, baseUrl, apiKey, modelName, maxTokens, temperature, topP, topK, frequencyPenalty, presencePenalty, stopSequences, seed } = settings;
     
     const headers = {

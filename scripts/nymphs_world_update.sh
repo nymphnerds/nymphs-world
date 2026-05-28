@@ -13,6 +13,14 @@ fi
 
 module_version="$(nymphs_world_version_from_manifest "${MODULE_ROOT}/nymph.json")"
 
+codex_bin="$(nymphs_world_codex_bin)"
+if [[ -n "${codex_bin}" ]]; then
+  codex_version="$(nymphs_world_codex_version "${codex_bin}" || true)"
+  echo "Codex optional dependency detected: ${codex_bin} ${codex_version}"
+else
+  echo "NOTE: Codex Sign In is optional and not installed; Local/Brain and OpenRouter/API providers remain available." >&2
+fi
+
 install_file_if_different() {
   local mode="$1"
   local source_file="$2"

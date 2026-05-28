@@ -20,6 +20,7 @@ import dialogueRoutes from './routes/dialogue.js';
 import conversationRoutes from './routes/conversations.js';
 import graphRoutes from './routes/graph.js';
 import reminderRoutes from './routes/reminders.js';
+import codexRoutes from './routes/codex.js';
 import adminRoutes from './routes/admin-maintenance.js';
 import maintenanceRoutes from './routes/maintenance.js';
 import requireAdmin from './middleware/requireAdmin.js';
@@ -80,6 +81,7 @@ app.use('/api/conversations', authMiddleware, conversationRoutes);
 app.use('/api/llm', authMiddleware, llmRoutes);
 app.use('/api/llm', authMiddleware, imageGenRoutes);
 app.use('/api/llm/graph', authMiddleware, graphRoutes);
+app.use('/api/codex', authMiddleware, codexRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/reminders', authMiddleware, reminderRoutes);
 

@@ -183,6 +183,19 @@ const cloudProviders = [
   },
 ];
 
+const subscriptionProviders = [
+  {
+    id: 'codex',
+    name: 'Codex Sign In',
+    group: 'subscription',
+    defaultUrl: '',
+    defaultPort: null,
+    requiresApiKey: false,
+    openAiCompatible: false,
+    warning: 'Uses Codex-managed ChatGPT sign-in for subscription-backed creative LLM features. This is not an API-key provider.',
+  },
+];
+
 function getLocalProviders() {
   return localProviders;
 }
@@ -191,8 +204,12 @@ function getCloudProviders() {
   return cloudProviders;
 }
 
+function getSubscriptionProviders() {
+  return subscriptionProviders;
+}
+
 function getAllProviders() {
-  return [...localProviders, ...cloudProviders];
+  return [...localProviders, ...cloudProviders, ...subscriptionProviders];
 }
 
 function getProviderById(id) {
@@ -202,8 +219,10 @@ function getProviderById(id) {
 export {
   localProviders,
   cloudProviders,
+  subscriptionProviders,
   getLocalProviders,
   getCloudProviders,
+  getSubscriptionProviders,
   getAllProviders,
   getProviderById,
 };

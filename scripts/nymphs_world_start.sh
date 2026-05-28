@@ -56,6 +56,10 @@ echo "Starting ${NYMPHS_WORLD_MODULE_NAME}..."
   export NYMPHS_WORLD_USERS_JSON="${NYMPHS_WORLD_USERS_JSON}"
   export NYMPHS_WORLD_USER_SETTINGS_DIR="${NYMPHS_WORLD_USER_SETTINGS_DIR}"
   export NYMPHS_WORLD_META_DIR="${NYMPHS_WORLD_META_DIR}"
+  codex_bin="$(nymphs_world_codex_bin)"
+  if [[ -n "${codex_bin}" ]]; then
+    export NYMPHS_WORLD_CODEX_BIN="${codex_bin}"
+  fi
 
   if command -v setsid >/dev/null 2>&1; then
     setsid -f bash -c 'printf "%s\n" "$$" > "$1"; exec node src/index.js > "$2" 2>&1' _ "${NYMPHS_WORLD_PID_FILE}" "${NYMPHS_WORLD_SERVER_LOG}"

@@ -25,6 +25,10 @@ const defaultUserSettings = {
   serverType: '',          // Legacy field — kept for compatibility ('ollama' triggers native API path)
   baseUrl: '',             // Full base URL for the LLM API
   apiKey: '',              // API key (empty for local providers)
+  codex: {
+    enabled: false,
+    loginMethod: 'device-code',
+  },
   modelName: '',           // Selected model name
   maxTokens: 4096,
   contextWindow: 8192,

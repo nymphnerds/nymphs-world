@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   sendChat, fetchModels, getSettings, testConnection, saveUserSettings,
+  getCodexProbe, getCodexStatus,
   type ChatMessage, type LLMSettings,
   type ToolPermissions,
 } from '../services/api';
@@ -12,6 +13,15 @@ import { estimateTokens, trimChatHistory, calculateHistoryBudget } from '../util
  */
 async function checkLlmHealth(settings: LLMSettings): Promise<boolean> {
   try {
+    if (settings.providerId === 'codex') {
+      const status = await getCodexStatus();
+      if (!status.available || !status.loggedIn || !status.appServerDaemon.available) {
+        return false;
+      }
+      const probe = await getCodexProbe();
+      return Boolean(probe.account && probe.models.length > 0);
+    }
+
     if (!settings.baseUrl) return false;
 
     const token = localStorage.getItem('wbu_token');
@@ -39,6 +49,10 @@ const defaultSettings: LLMSettings = {
   serverType: '',
   baseUrl: '',
   apiKey: '',
+  codex: {
+    enabled: false,
+    loginMethod: 'device-code',
+  },
   modelName: '',
   maxTokens: 4096,
   contextWindow: 8192,
@@ -189,6 +203,19 @@ export function useLLM() {
     setError(null);
     setConnectionStatus('testing');
     try {
+      if (settings.providerId === 'codex') {
+        const result = await testConnection(settings);
+        if (result.success) {
+          setLlmConnected(true);
+          setConnectionStatus('connected');
+        } else {
+          setError(result.message);
+          setLlmConnected(false);
+          setConnectionStatus('failed');
+        }
+        return;
+      }
+
       const result = await testConnection(settings);
       if (result.success) {
         setLlmConnected(true);
@@ -211,6 +238,15 @@ export function useLLM() {
     setLoading(true);
     setError(null);
     try {
+      if (settings.providerId === 'codex') {
+        const list = await fetchModels();
+        setModels(list);
+        if (list.length > 0 && !settings.modelName) {
+          setSettings((prev) => ({ ...prev, modelName: list[0] }));
+        }
+        return;
+      }
+
       const baseUrl = customBaseUrl || settings.baseUrl;
       const apiKey = customApiKey || settings.apiKey;
       const serverType = customServerType || settings.serverType;
@@ -226,7 +262,7 @@ export function useLLM() {
     } finally {
       setLoading(false);
     }
-  }, [settings.baseUrl, settings.apiKey, settings.serverType, settings.modelName]);
+  }, [settings.providerId, settings.baseUrl, settings.apiKey, settings.serverType, settings.modelName]);
 
   const updateToolPermissions = useCallback((partial: Partial<ToolPermissions>) => {
     setToolPermissions((prev) => ({ ...prev, ...partial }));

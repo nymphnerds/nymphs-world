@@ -111,7 +111,7 @@
     ]
   },
   "overview": {
-    "body": "Private dev build. Current slice: WORBI-derived workspace UI running as the Nymphs World module, with data and logs kept under NymphsData while project-root adaptation continues."
+    "body": "Private dev build. Current slice: WORBI-derived workspace UI running as the Nymphs World module, with data and logs kept under NymphsData while project-root adaptation continues. Codex Sign In is an optional provider lane for ChatGPT subscription-backed creative generation; Local/Brain and OpenRouter/API providers remain available."
   },
   "uninstall": {
     "supports_purge": true,
@@ -130,6 +130,10 @@
       "app runtime files",
       "module scripts"
     ]
+  },
+  "dependencies": {
+    "node": "Node.js and npm from the NymphsCore base runtime",
+    "codex_cli": "Optional. Official standalone Codex CLI for the Codex Sign In provider lane; not required for Local/Brain or OpenRouter/API providers."
   },
   "update_policy": {
     "channel": "experimental"

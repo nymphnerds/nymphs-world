@@ -127,6 +127,10 @@ export interface LLMSettings {
   serverType: string;           // Legacy field — 'ollama' triggers native API path
   baseUrl: string;              // Full base URL for the LLM API
   apiKey: string;               // API key (empty for local providers)
+  codex?: {
+    enabled: boolean;
+    loginMethod: 'device-code' | 'browser';
+  };
   modelName: string;
   maxTokens: number;
   contextWindow: number;        // Model context window size in tokens (for auto-trimming chat history)
@@ -142,6 +146,64 @@ export interface LLMSettings {
   zImage?: {
     baseUrl: string;
   };
+}
+
+export interface CodexStatus {
+  available: boolean;
+  binary: string;
+  cliVersion: string | null;
+  loggedIn: boolean;
+  authMode: string | null;
+  loginLabel: string;
+  appServerDaemon: {
+    available: boolean;
+    message: string;
+  };
+  warnings: string[];
+}
+
+export interface CodexAccount {
+  type: string;
+  email?: string;
+  planType?: string;
+}
+
+export interface CodexModelInfo {
+  id: string;
+  model: string;
+  displayName: string;
+  isDefault: boolean;
+  defaultReasoningEffort: string | null;
+  supportedReasoningEfforts: Array<{
+    reasoningEffort?: string;
+    description?: string;
+  }>;
+  inputModalities: string[];
+}
+
+export interface CodexProbe {
+  account: CodexAccount | null;
+  requiresOpenaiAuth: boolean;
+  models: CodexModelInfo[];
+}
+
+export interface CodexLoginSession {
+  loginId: string | null;
+  method: 'browser' | 'device-code';
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  success: boolean | null;
+  error: string | null;
+  startedAt: string;
+  completedAt: string | null;
+  authUrl: string | null;
+  verificationUrl: string | null;
+  userCode: string | null;
+  type: string | null;
+  externalOpen?: {
+    opened: boolean;
+    via?: string;
+    error?: string;
+  } | null;
 }
 
 // Check if a user exists (no auth header needed)
@@ -433,6 +495,61 @@ export async function fetchModels(baseUrl?: string, apiKey?: string, serverType?
   return data.models;
 }
 
+export async function getCodexStatus(): Promise<CodexStatus> {
+  const res = await authFetch(`${API_BASE}/codex/status`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function getCodexProbe(): Promise<CodexProbe> {
+  const res = await authFetch(`${API_BASE}/codex/probe`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Codex probe failed');
+  }
+  return res.json();
+}
+
+export async function startCodexLogin(method: 'device-code' | 'browser' = 'browser', openExternal = false): Promise<CodexLoginSession> {
+  const res = await authFetch(`${API_BASE}/codex/login/start`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ method, openExternal }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Codex sign-in failed');
+  }
+  return res.json();
+}
+
+export async function openCodexLoginSession(loginId: string): Promise<{ opened: boolean; via?: string; error?: string }> {
+  const res = await authFetch(`${API_BASE}/codex/login/${encodeURIComponent(loginId)}/open`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Codex sign-in page could not be opened');
+  }
+  return res.json();
+}
+
+export async function getCodexLoginStatus(loginId: string): Promise<CodexLoginSession> {
+  const res = await authFetch(`${API_BASE}/codex/login/${encodeURIComponent(loginId)}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Codex sign-in status failed');
+  }
+  return res.json();
+}
+
 export async function sendChat(
   message: string,
   history: ChatMessage[],
@@ -490,7 +607,14 @@ export async function saveSettings(settings: Partial<LLMSettings>): Promise<LLMS
   return data.settings;
 }
 
-export async function testConnection(settings: Partial<LLMSettings>): Promise<{ success: boolean; message: string }> {
+export interface TestConnectionResponse {
+  success: boolean;
+  message: string;
+  models?: string[];
+  details?: any;
+}
+
+export async function testConnection(settings: Partial<LLMSettings>): Promise<TestConnectionResponse> {
   const res = await authFetch(`${API_BASE}/settings/test`, {
     method: 'POST',
     headers: authHeaders(),

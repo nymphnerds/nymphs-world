@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { X, Check, AlertCircle, Settings as SettingsIcon, Zap, Shield, RefreshCw, Eye, EyeOff, Sparkles, Palette, Tags, MapPin, Clock, ListTree, GitGraph, Image as ImageIcon, Bell, LayoutPanelLeft, Wrench, MessageSquare } from 'lucide-react';
+import { X, Check, AlertCircle, Settings as SettingsIcon, Zap, Shield, RefreshCw, Eye, EyeOff, Sparkles, Palette, Tags, MapPin, Clock, ListTree, GitGraph, Image as ImageIcon, Bell, LayoutPanelLeft, Wrench, MessageSquare, ExternalLink, KeyRound, Copy } from 'lucide-react';
 import { useLLM } from '../hooks/useLLM';
 import { getMaxTabs, setMaxTabs } from '../hooks/useFiles';
 import { ThemePicker } from '../components/ThemePicker';
 import { useAuthContext } from '../features/auth/AuthProvider';
-import type { ToolPermissions, ImageGenStatus as ImageGenStatusType } from '../services/api';
-import { getImageGenerationStatus, testZImageConnection, saveUserSettings } from '../services/api';
+import type { ToolPermissions, ImageGenStatus as ImageGenStatusType, CodexLoginSession, CodexProbe, CodexStatus } from '../services/api';
+import { getImageGenerationStatus, testZImageConnection, saveUserSettings, getCodexLoginStatus, getCodexProbe, getCodexStatus, openCodexLoginSession, startCodexLogin } from '../services/api';
 
 // Static provider presets for manual selection
 
@@ -27,6 +27,8 @@ const PROVIDER_PRESETS = [
   { id: 'anthropic', name: 'Anthropic', group: 'cloud', defaultUrl: 'https://api.anthropic.com/v1', requiresApiKey: true, warning: 'Anthropic uses a non-OpenAI-compatible API. Model loading and chat may not work without a custom adapter.' },
   { id: 'xai', name: 'xAI (Grok)', group: 'cloud', defaultUrl: 'https://api.x.ai/v1', requiresApiKey: true },
   { id: 'google', name: 'Google AI Studio', group: 'cloud', defaultUrl: 'https://generativelanguage.googleapis.com/v1', requiresApiKey: true, warning: 'Google AI Studio uses a non-OpenAI-compatible API. Model loading and chat may not work without a custom adapter.' },
+  // Subscription-backed providers
+  { id: 'codex', name: 'Codex Sign In', group: 'subscription', defaultUrl: '', requiresApiKey: false, warning: 'Codex uses ChatGPT/Codex sign-in for subscription-backed creative actions. It is not an API-key provider.' },
   // Custom
   { id: 'custom', name: 'Custom (any OpenAI-compatible server)', group: 'other', defaultUrl: '', requiresApiKey: false },
 ];
@@ -164,6 +166,11 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   const [formApiKey, setFormApiKey] = useState(settings.apiKey);
   const [formModelName, setFormModelName] = useState(settings.modelName);
   const [testError, setTestError] = useState<string | null>(null);
+  const [codexStatus, setCodexStatus] = useState<CodexStatus | null>(null);
+  const [codexProbe, setCodexProbe] = useState<CodexProbe | null>(null);
+  const [codexLogin, setCodexLogin] = useState<CodexLoginSession | null>(null);
+  const [codexLoading, setCodexLoading] = useState(false);
+  const [codexError, setCodexError] = useState<string | null>(null);
   const initialSyncDone = useRef(false);
   const apiKeySaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -172,7 +179,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   // Guard: only sync when settings have actual data (non-empty baseUrl) to avoid
   // consuming the empty default render before the async server response arrives
   useEffect(() => {
-    if (!initialSyncDone.current && settings.baseUrl) {
+    if (!initialSyncDone.current && (settings.baseUrl || settings.providerId === 'codex')) {
       setFormProviderId(settings.providerId);
       setFormBaseUrl(settings.baseUrl);
       setFormApiKey(settings.apiKey);
@@ -193,6 +200,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   // Debounced auto-save when API key changes (1s delay after user stops typing)
   useEffect(() => {
     if (!initialSyncDone.current) return; // Skip until initial sync completes
+    if (formProviderId === 'codex') return;
 
     // Clear any existing timer
     if (apiKeySaveTimer.current) {
@@ -209,7 +217,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
         providerId: formProviderId,
       });
     }, 1000);
-  }, [formApiKey]);
+  }, [formApiKey, formProviderId]);
 
   const handleMaxTabsChange = useCallback((val: number) => {
     const clamped = Math.max(1, Math.min(50, val));
@@ -225,6 +233,10 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
       baseUrl: formBaseUrl,
       apiKey: formApiKey,
       modelName: formModelName,
+      codex: {
+        enabled: formProviderId === 'codex',
+        loginMethod: 'device-code' as const,
+      },
       serverType: formProviderId === 'ollama' ? 'ollama' : '',
     };
     // Commit form values to settings state
@@ -246,15 +258,154 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
 
     // Find the provider in presets
     const preset = PROVIDER_PRESETS.find((p) => p.id === providerId);
-    if (preset && preset.defaultUrl) {
+    if (providerId === 'codex') {
+      setFormBaseUrl('');
+      setFormApiKey('');
+      setFormModelName('');
+    } else if (preset && preset.defaultUrl) {
       setFormBaseUrl(preset.defaultUrl);
     } else if (providerId === 'custom') {
       // Keep existing URL for custom
     }
   }, []);
 
+  const handleRefreshCodexStatus = useCallback(async () => {
+    setCodexLoading(true);
+    setCodexError(null);
+    try {
+      const status = await getCodexStatus();
+      setCodexStatus(status);
+      if (!status.available || !status.loggedIn || !status.appServerDaemon.available) {
+        setCodexError(status.warnings?.[0] || status.loginLabel || 'Codex Sign In is not ready yet.');
+        setCodexProbe(null);
+        return;
+      }
+
+      const probe = await getCodexProbe();
+      setCodexProbe(probe);
+      const modelIds = probe.models.map((model) => model.id);
+      if (modelIds.length > 0 && !formModelName) {
+        const defaultModel = probe.models.find((model) => model.isDefault)?.id || modelIds[0];
+        setFormModelName(defaultModel);
+        updateSettings({ modelName: defaultModel });
+      }
+    } catch (err: any) {
+      setCodexError(err.message || 'Failed to read Codex status.');
+      setCodexProbe(null);
+    } finally {
+      setCodexLoading(false);
+    }
+  }, [formModelName, updateSettings]);
+
+  const openCodexLoginUrl = useCallback((loginUrl: string | null | undefined) => {
+    if (!loginUrl) return;
+    navigator.clipboard?.writeText(loginUrl).catch(() => {});
+  }, []);
+
+  const handleCopyCodexCode = useCallback(async () => {
+    if (!codexLogin?.userCode) return;
+    try {
+      await navigator.clipboard.writeText(codexLogin.userCode);
+    } catch {
+      // Clipboard access can fail outside secure/browser contexts; the visible code remains copyable.
+    }
+  }, [codexLogin?.userCode]);
+
+  const handleCopyCodexUrl = useCallback(async () => {
+    const loginUrl = codexLogin?.authUrl || codexLogin?.verificationUrl;
+    if (!loginUrl) return;
+    try {
+      await navigator.clipboard.writeText(loginUrl);
+    } catch {
+      // The visible open action remains available if clipboard access is blocked.
+    }
+  }, [codexLogin?.authUrl, codexLogin?.verificationUrl]);
+
+  const handleOpenCodexLoginSession = useCallback(async () => {
+    if (!codexLogin?.loginId) {
+      openCodexLoginUrl(codexLogin?.authUrl || codexLogin?.verificationUrl);
+      return;
+    }
+    setCodexLoading(true);
+    setCodexError(null);
+    try {
+      const result = await openCodexLoginSession(codexLogin.loginId);
+      if (!result.opened) {
+        setCodexError(result.error || 'Codex sign-in page could not be opened.');
+      }
+    } catch (err: any) {
+      setCodexError(err.message || 'Codex sign-in page could not be opened.');
+    } finally {
+      setCodexLoading(false);
+    }
+  }, [codexLogin, openCodexLoginUrl]);
+
+  const handleStartCodexLogin = useCallback(async (method: 'browser' | 'device-code') => {
+    setCodexLoading(true);
+    setCodexError(null);
+    setCodexLogin(null);
+    try {
+      const login = await startCodexLogin(method, method === 'browser');
+      setCodexLogin(login);
+      if (login.externalOpen && !login.externalOpen.opened) {
+        setCodexError(login.externalOpen.error || 'Codex sign-in page could not be opened in the system browser.');
+      }
+
+      if (!login.loginId || login.status !== 'pending') {
+        await handleRefreshCodexStatus();
+      }
+    } catch (err: any) {
+      setCodexError(err.message || 'Codex sign-in could not start.');
+      await handleRefreshCodexStatus();
+    } finally {
+      setCodexLoading(false);
+    }
+  }, [handleRefreshCodexStatus]);
+
+  useEffect(() => {
+    if (!codexLogin?.loginId || codexLogin.status !== 'pending') return;
+    const loginId = codexLogin.loginId;
+
+    let cancelled = false;
+    const timer = window.setInterval(async () => {
+      try {
+        const status = await getCodexLoginStatus(loginId);
+        if (cancelled) return;
+        setCodexLogin(status);
+        if (status.status !== 'pending') {
+          window.clearInterval(timer);
+          if (status.success) {
+            await handleRefreshCodexStatus();
+          } else {
+            setCodexError(status.error || 'Codex sign-in did not complete.');
+          }
+        }
+      } catch (err: any) {
+        if (!cancelled) {
+          setCodexError(err.message || 'Failed to check Codex sign-in.');
+        }
+      }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [codexLogin?.loginId, codexLogin?.status, handleRefreshCodexStatus]);
+
+  useEffect(() => {
+    if (formProviderId === 'codex') {
+      handleRefreshCodexStatus();
+    }
+  }, [formProviderId, handleRefreshCodexStatus]);
+
   const handleTestConnection = useCallback(async () => {
     setTestError(null);
+    if (formProviderId === 'codex') {
+      await handleRefreshCodexStatus();
+      return;
+    }
+
     updateSettings({
       providerId: formProviderId,
       baseUrl: formBaseUrl,
@@ -266,7 +417,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
     if (connectionStatus === 'connected' || formBaseUrl) {
       loadModels(formBaseUrl, formApiKey, formProviderId === 'ollama' ? 'ollama' : '');
     }
-  }, [formProviderId, formBaseUrl, formApiKey, testConn, loadModels, connectionStatus, updateSettings]);
+  }, [formProviderId, formBaseUrl, formApiKey, testConn, loadModels, connectionStatus, updateSettings, handleRefreshCodexStatus]);
 
   const handleRefreshModels = useCallback(async () => {
     loadModels(formBaseUrl, formApiKey, formProviderId === 'ollama' ? 'ollama' : '');
@@ -292,12 +443,24 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   // Group providers
   const localPresets = PROVIDER_PRESETS.filter((p) => p.group === 'local');
   const cloudPresets = PROVIDER_PRESETS.filter((p) => p.group === 'cloud');
+  const subscriptionPresets = PROVIDER_PRESETS.filter((p) => p.group === 'subscription');
   const otherPresets = PROVIDER_PRESETS.filter((p) => p.group === 'other');
 
   // Check if selected provider requires API key
   const selectedPreset = PROVIDER_PRESETS.find((p) => p.id === formProviderId);
   const requiresApiKey = selectedPreset?.requiresApiKey || false;
   const providerWarning = selectedPreset?.warning;
+  const isCodexProvider = formProviderId === 'codex';
+  const codexLoginUrl = codexLogin?.authUrl || codexLogin?.verificationUrl || null;
+  const codexLoginDisabled = codexLoading || codexStatus?.appServerDaemon.available === false;
+  const codexAccountLabel = codexStatus?.loggedIn
+    ? (codexStatus.loginLabel || 'ChatGPT').replace(/^Logged in using\s+/i, '')
+    : codexStatus?.loginLabel || 'Not checked';
+  const codexAccountClass = codexStatus?.loggedIn
+    ? 'text-green-400'
+    : codexStatus
+      ? 'text-yellow-400'
+      : 'text-[var(--muted-fg-hex)]';
 
   return (
     <div className="flex flex-col h-full bg-[var(--bg-hex)] text-[var(--fg-hex)]">
@@ -387,6 +550,11 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                       </option>
                     ))}
                   </optgroup>
+                  <optgroup label="Subscription sign-in">
+                    {subscriptionPresets.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </optgroup>
                   <optgroup label="Other">
                     {otherPresets.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -396,111 +564,282 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                 <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Select a provider to auto-fill the URL below, then configure your connection.</p>
               </div>
 
-              {/* URL — always visible for manual configuration */}
-              <div>
-                <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">URL</label>
-                <input
-                  type="text"
-                  value={formBaseUrl}
-                  onChange={(e) => setFormBaseUrl(e.target.value)}
-                  placeholder="http://localhost:1234/v1"
-                  className={inputClass}
-                />
-                <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Base URL for the LLM API endpoint.</p>
-              </div>
-
-              {/* API Key — always shown (some local servers like llama.cpp also require API keys) */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium uppercase tracking-wider">
-                    API Key {requiresApiKey ? <span className="text-red-400">*</span> : '(optional)'}
-                  </label>
-                </div>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type={showApiKey ? 'text' : 'password'}
-                      value={formApiKey}
-                      onChange={(e) => setFormApiKey(e.target.value)}
-                      placeholder={requiresApiKey ? 'Enter your API key' : 'Optional — for local servers leave empty'}
-                      className={`${inputClass} pr-8`}
-                    />
+              {isCodexProvider ? (
+                <div className="rounded-md border border-[var(--border-hex)] bg-[var(--card-hex)]/40 p-3 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="min-w-0 truncate text-sm font-semibold">Codex Sign In</h3>
                     <button
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted-fg-hex)] hover:text-[var(--fg-hex)]"
-                      title={showApiKey ? 'Hide key' : 'Show key'}
+                      onClick={handleRefreshCodexStatus}
+                      disabled={codexLoading}
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-[var(--primary-hex)]/20 text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/30 transition-colors disabled:opacity-50"
                     >
-                      {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                      <RefreshCw size={13} className={codexLoading ? 'animate-spin' : ''} />
+                      {codexLoading ? 'Checking...' : 'Check'}
                     </button>
                   </div>
-                </div>
-                {formApiKey && formApiKey.length > 4 && (
-                  <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Masked: {maskApiKey(formApiKey)}</p>
-                )}
-              </div>
 
-              {/* Model */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-medium uppercase tracking-wider">Model</label>
-                  <button
-                    onClick={handleRefreshModels}
-                    disabled={loading || !formBaseUrl}
-                    className="p-1 rounded text-[var(--muted-fg-hex)] hover:text-[var(--fg-hex)] transition-colors disabled:opacity-50"
-                    title="Refresh model list"
-                  >
-                    <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-                  </button>
-                </div>
-                <select
-                  value={formModelName}
-                  onChange={async (e) => {
-                    const newModel = e.target.value;
-                    setFormModelName(newModel);
-                    updateSettings({ modelName: newModel });
-                    await saveUserSettings({
-                      ...settings,
-                      modelName: newModel,
-                      apiKey: formApiKey,
-                      baseUrl: formBaseUrl,
-                      providerId: formProviderId,
-                    });
-                  }}
-                  disabled={!formBaseUrl}
-                  className={`${selectClass} disabled:opacity-50`}
-                >
-                  {formModelName && !models.includes(formModelName) && (
-                    <option key="saved" value={formModelName}>✓ {formModelName}</option>
+                  <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-x-2 gap-y-2 text-xs">
+                    <div className="contents">
+                      <span className="text-[var(--muted-fg-hex)]">CLI</span>
+                      <span className={`min-w-0 justify-self-end text-right ${codexStatus?.available ? 'text-green-400' : codexStatus ? 'text-red-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                        {codexStatus?.available ? codexStatus.cliVersion || 'Available' : 'Not checked'}
+                      </span>
+                    </div>
+                    <div className="contents">
+                      <span className="text-[var(--muted-fg-hex)]">Account</span>
+                      <span className={`min-w-0 justify-self-end break-words text-right ${codexAccountClass}`}>
+                        {codexAccountLabel}
+                      </span>
+                    </div>
+                    <div className="contents">
+                      <span className="text-[var(--muted-fg-hex)]">App server</span>
+                      <span className={`min-w-0 justify-self-end text-right ${codexStatus?.appServerDaemon.available ? 'text-green-400' : codexStatus ? 'text-yellow-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                        {codexStatus?.appServerDaemon.available ? 'Ready' : 'Not checked'}
+                      </span>
+                    </div>
+                    <div className="contents">
+                      <span className="text-[var(--muted-fg-hex)]">Plan</span>
+                      <span className={`min-w-0 justify-self-end break-words text-right ${codexProbe?.account ? 'text-green-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                        {codexProbe?.account?.planType || codexProbe?.account?.type || 'Not probed'}
+                      </span>
+                    </div>
+                    <div className="contents">
+                      <span className="text-[var(--muted-fg-hex)]">Models</span>
+                      <span className={`min-w-0 justify-self-end text-right ${codexProbe?.models?.length ? 'text-green-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                        {codexProbe?.models?.length ? `${codexProbe.models.length} available` : 'Not loaded'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">Model</label>
+                    <select
+                      value={formModelName}
+                      onChange={async (e) => {
+                        const newModel = e.target.value;
+                        setFormModelName(newModel);
+                        updateSettings({ modelName: newModel });
+                        await saveUserSettings({
+                          ...settings,
+                          providerId: 'codex',
+                          baseUrl: '',
+                          apiKey: '',
+                          modelName: newModel,
+                          codex: {
+                            enabled: true,
+                            loginMethod: 'device-code',
+                          },
+                        });
+                      }}
+                      disabled={codexLoading || !codexProbe?.models?.length}
+                      className={`${selectClass} disabled:opacity-50`}
+                    >
+                      {formModelName && !codexProbe?.models?.some((model) => model.id === formModelName) && (
+                        <option key="saved" value={formModelName}>✓ {formModelName}</option>
+                      )}
+                      <option value="">-- Select a model --</option>
+                      {codexProbe?.models?.map((model) => (
+                        <option key={model.id} value={model.id}>
+                          {model.displayName || model.id}{model.isDefault ? ' · default' : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">
+                      {formModelName ? `Active: ${formModelName}` : 'Run Check to load Codex models.'}
+                    </p>
+                  </div>
+
+                  {Boolean(codexError || codexStatus?.warnings?.length) && (
+                    <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-300">
+                      {codexError || codexStatus?.warnings?.[0]}
+                    </div>
                   )}
-                  <option value="">-- Select a model --</option>
-                  {models.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-                {!formBaseUrl && (
-                  <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Enter a provider URL above to load models.</p>
-                )}
-                {formBaseUrl && models.length === 0 && !loading && connectionStatus === 'failed' && (
-                  <p className="text-[11px] text-yellow-400 mt-1">⚠ Could not load models. Check URL and click Refresh.</p>
-                )}
-              </div>
 
-              {/* Connection Status */}
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full ${dotClass(connectionStatus)}`} />
-                  <span className={`text-xs font-medium ${statusColor(connectionStatus)}`}>
-                    {statusText(connectionStatus, formModelName)}
-                  </span>
-                  <button
-                    onClick={handleTestConnection}
-                    disabled={testing || !formBaseUrl}
-                    className="ml-auto px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)]/20 text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/30 transition-colors disabled:opacity-50"
-                  >
-                    {testing ? 'Testing...' : 'Test Connection'}
-                  </button>
+                  {codexLogin && (
+                    <div className="rounded-md border border-[var(--border-hex)] bg-[var(--bg-hex)]/40 p-3 text-xs">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-[var(--muted-fg-hex)]">
+                          {codexLogin.method === 'device-code' ? 'Device code sign-in' : 'Browser sign-in'}
+                        </span>
+                        <span className={codexLogin.status === 'completed' ? 'text-green-400' : codexLogin.status === 'pending' ? 'text-yellow-400' : 'text-red-400'}>
+                          {codexLogin.status}
+                        </span>
+                      </div>
+                      {codexLogin.userCode && (
+                        <div className="mt-3 rounded-md border border-[var(--border-hex)] bg-[var(--card-hex)]/50 p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[var(--muted-fg-hex)]">Code</span>
+                            <button
+                              type="button"
+                              onClick={handleCopyCodexCode}
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/10"
+                            >
+                              <Copy size={11} />
+                              Copy
+                            </button>
+                          </div>
+                          <div className="mt-1 font-mono text-base tracking-wider text-[var(--fg-hex)]">{codexLogin.userCode}</div>
+                        </div>
+                      )}
+                      {codexLoginUrl && codexLogin.status === 'pending' && (
+                        <div className="mt-3 grid grid-cols-1 gap-2">
+                          <button
+                            type="button"
+                            onClick={handleOpenCodexLoginSession}
+                            disabled={codexLoading}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--border-hex)] px-3 py-1.5 text-xs text-[var(--fg-hex)] hover:bg-[var(--card-hex)] transition-colors disabled:opacity-50"
+                          >
+                            <ExternalLink size={13} />
+                            {codexLogin.method === 'device-code' ? 'Open Device Page' : 'Open Sign-In Page'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCopyCodexUrl}
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/10 transition-colors"
+                          >
+                            <Copy size={13} />
+                            Copy Sign-In Link
+                          </button>
+                        </div>
+                      )}
+                      {codexLogin.status === 'completed' && (
+                        <p className="mt-2 text-[11px] text-green-400">Sign-in completed. Run Check to refresh models.</p>
+                      )}
+                      {codexLogin.error && <p className="mt-2 text-red-400">{codexLogin.error}</p>}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 gap-2">
+                      <button
+                        onClick={() => handleStartCodexLogin('browser')}
+                        disabled={codexLoginDisabled}
+                        className="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-colors hover:brightness-110 disabled:opacity-50"
+                      >
+                        <ExternalLink size={13} />
+                        {codexLoading ? 'Opening...' : 'Browser Sign In'}
+                      </button>
+                      <button
+                        onClick={() => handleStartCodexLogin('device-code')}
+                        disabled={codexLoginDisabled}
+                        className="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[var(--border-hex)] px-3 py-1.5 text-xs text-[var(--fg-hex)] transition-colors hover:bg-[var(--bg-hex)] disabled:opacity-50"
+                      >
+                        <KeyRound size={13} />
+                        Device Code
+                      </button>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-[var(--muted-fg-hex)]">If browser sign-in misbehaves, use Device Code.</p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* URL — always visible for manual configuration */}
+                  <div>
+                    <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">URL</label>
+                    <input
+                      type="text"
+                      value={formBaseUrl}
+                      onChange={(e) => setFormBaseUrl(e.target.value)}
+                      placeholder="http://localhost:1234/v1"
+                      className={inputClass}
+                    />
+                    <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Base URL for the LLM API endpoint.</p>
+                  </div>
+
+                  {/* API Key — always shown (some local servers like llama.cpp also require API keys) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-medium uppercase tracking-wider">
+                        API Key {requiresApiKey ? <span className="text-red-400">*</span> : '(optional)'}
+                      </label>
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type={showApiKey ? 'text' : 'password'}
+                          value={formApiKey}
+                          onChange={(e) => setFormApiKey(e.target.value)}
+                          placeholder={requiresApiKey ? 'Enter your API key' : 'Optional — for local servers leave empty'}
+                          className={`${inputClass} pr-8`}
+                        />
+                        <button
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted-fg-hex)] hover:text-[var(--fg-hex)]"
+                          title={showApiKey ? 'Hide key' : 'Show key'}
+                        >
+                          {showApiKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
+                    {formApiKey && formApiKey.length > 4 && (
+                      <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Masked: {maskApiKey(formApiKey)}</p>
+                    )}
+                  </div>
+
+                  {/* Model */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-medium uppercase tracking-wider">Model</label>
+                      <button
+                        onClick={handleRefreshModels}
+                        disabled={loading || !formBaseUrl}
+                        className="p-1 rounded text-[var(--muted-fg-hex)] hover:text-[var(--fg-hex)] transition-colors disabled:opacity-50"
+                        title="Refresh model list"
+                      >
+                        <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+                      </button>
+                    </div>
+                    <select
+                      value={formModelName}
+                      onChange={async (e) => {
+                        const newModel = e.target.value;
+                        setFormModelName(newModel);
+                        updateSettings({ modelName: newModel });
+                        await saveUserSettings({
+                          ...settings,
+                          modelName: newModel,
+                          apiKey: formApiKey,
+                          baseUrl: formBaseUrl,
+                          providerId: formProviderId,
+                        });
+                      }}
+                      disabled={!formBaseUrl}
+                      className={`${selectClass} disabled:opacity-50`}
+                    >
+                      {formModelName && !models.includes(formModelName) && (
+                        <option key="saved" value={formModelName}>✓ {formModelName}</option>
+                      )}
+                      <option value="">-- Select a model --</option>
+                      {models.map((m) => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                    {!formBaseUrl && (
+                      <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Enter a provider URL above to load models.</p>
+                    )}
+                    {formBaseUrl && models.length === 0 && !loading && connectionStatus === 'failed' && (
+                      <p className="text-[11px] text-yellow-400 mt-1">⚠ Could not load models. Check URL and click Refresh.</p>
+                    )}
+                  </div>
+
+                  {/* Connection Status */}
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2.5 h-2.5 rounded-full ${dotClass(connectionStatus)}`} />
+                      <span className={`text-xs font-medium ${statusColor(connectionStatus)}`}>
+                        {statusText(connectionStatus, formModelName)}
+                      </span>
+                      <button
+                        onClick={handleTestConnection}
+                        disabled={testing || !formBaseUrl}
+                        className="ml-auto px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)]/20 text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/30 transition-colors disabled:opacity-50"
+                      >
+                        {testing ? 'Testing...' : 'Test Connection'}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Max Tokens */}
               <div>
@@ -1086,4 +1425,3 @@ function ImageGenStatusPanel() {
     </div>
   );
 }
-

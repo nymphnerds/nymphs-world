@@ -31,12 +31,20 @@ vi.mock('../../../src/services/toolService.js', () => ({
   getToolDefinitions: vi.fn(() => []),
 }));
 
+vi.mock('../../../src/services/codexService.js', () => ({
+  fetchCodexModels: vi.fn(),
+  sendCodexCreativeTurn: vi.fn(),
+}));
+
 import * as toolService from '../../../src/services/toolService.js';
+import * as codexService from '../../../src/services/codexService.js';
 import * as llmService from '../../../src/services/llmService.js';
 
 // Grab mocked exports as typed mocks
 const mockExecuteTool = vi.mocked(toolService.executeTool);
 const mockGetToolDefinitions = vi.mocked(toolService.getToolDefinitions);
+const mockFetchCodexModels = vi.mocked(codexService.fetchCodexModels);
+const mockSendCodexCreativeTurn = vi.mocked(codexService.sendCodexCreativeTurn);
 
 // -- Helpers --
 
@@ -54,6 +62,8 @@ describe('llmService', () => {
     axiosGetSpy = vi.spyOn(axios, 'get');
     mockGetToolDefinitions.mockReturnValue([]);
     mockExecuteTool.mockReset();
+    mockFetchCodexModels.mockReset();
+    mockSendCodexCreativeTurn.mockReset();
     axiosPostSpy.mockReset();
     axiosGetSpy.mockReset();
   });
@@ -85,6 +95,13 @@ describe('llmService', () => {
     it('throws on HTTP error', async () => {
       axiosGetSpy.mockRejectedValue(new Error('ECONNREFUSED'));
       await expect(llmService.fetchModels(SETTINGS)).rejects.toThrow(/Failed to fetch models/);
+    });
+
+    it('routes Codex model listing through the Codex app-server adapter', async () => {
+      mockFetchCodexModels.mockResolvedValue(['gpt-codex']);
+      const models = await llmService.fetchModels({ providerId: 'codex' });
+      expect(models).toEqual(['gpt-codex']);
+      expect(axiosGetSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -119,6 +136,27 @@ describe('llmService', () => {
       );
       expect(resp.role).toBe('assistant');
       expect(resp.content).toBe('Hello!');
+    });
+
+    it('routes Codex chat through the Codex creative adapter', async () => {
+      mockSendCodexCreativeTurn.mockResolvedValue({
+        role: 'assistant',
+        content: 'Codex worldbuilding reply',
+        provider: 'codex',
+      });
+
+      const resp = await llmService.sendChatMessage(
+        [{ role: 'user', content: 'Draft a character bio' }],
+        'current lore', 'system prompt', undefined, { providerId: 'codex' }, 'testuser'
+      );
+
+      expect(resp.content).toBe('Codex worldbuilding reply');
+      expect(mockSendCodexCreativeTurn).toHaveBeenCalledWith(expect.objectContaining({
+        documentContent: 'current lore',
+        purpose: 'chat',
+        username: 'testuser',
+      }));
+      expect(axiosPostSpy).not.toHaveBeenCalled();
     });
 
     it('includes document content in system prompt', async () => {

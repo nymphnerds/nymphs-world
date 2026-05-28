@@ -98,3 +98,25 @@ with open(sys.argv[1], "r", encoding="utf-8") as handle:
 print(str(manifest.get("version", "unknown")).strip() or "unknown")
 PY
 }
+
+nymphs_world_codex_bin() {
+  command -v codex 2>/dev/null || true
+}
+
+nymphs_world_codex_version() {
+  local codex_bin="$1"
+  [[ -n "${codex_bin}" ]] || return 1
+  "${codex_bin}" --version 2>/dev/null | sed 's/^codex-cli[[:space:]]*//'
+}
+
+nymphs_world_codex_logged_in() {
+  local codex_bin="$1"
+  [[ -n "${codex_bin}" ]] || return 1
+  "${codex_bin}" login status 2>&1 | grep -qi 'logged in using chatgpt'
+}
+
+nymphs_world_codex_app_server_ready() {
+  local codex_bin="$1"
+  [[ -n "${codex_bin}" ]] || return 1
+  "${codex_bin}" app-server daemon version >/dev/null 2>&1
+}
