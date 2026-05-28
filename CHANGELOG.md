@@ -4,7 +4,7 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
-## 2026-05-28 Codex Sign-In Provider Lane
+## 0.2.1 - 2026-05-28 Codex Sign-In Provider Lane
 
 Added:
 
@@ -19,8 +19,10 @@ Added:
   not create tabless popup browser windows.
 - Added Codex status keys to the module status flow, including CLI, login,
   app-server, and ready state.
-- Added focused Codex unit tests and a Nymphs World WORBI handoff document.
+- Added focused Codex unit tests, a Nymphs World WORBI handoff document, and a
+  tomorrow handoff for continuing the work.
 - Added project-local WORBI rule skills under `.agents/skills/worbi-rules`.
+- Added Nymphs World planning docs under `docs/Ideas/`.
 
 Changed:
 
@@ -34,6 +36,8 @@ Changed:
   explicit device-code support.
 - Module install/update/status scripts now treat Codex as an optional provider
   dependency rather than a core runtime blocker.
+- Module version is now `0.2.1` so Manager can detect the remote update from an
+  installed `0.2.0` package.
 
 Verified:
 
@@ -52,7 +56,7 @@ Notes:
 - Codex file tools, image transcription, media generation, and streaming UI are
   intentionally separate future proof passes.
 
-## 2026-05-28 WORBI Workspace Base
+## 0.2.0 - 2026-05-28 WORBI Workspace Base
 
 Added:
 
