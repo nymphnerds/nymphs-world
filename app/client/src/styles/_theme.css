@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Default CSS Custom Properties (Dark Mode - Purple Mist) === */
+:root {
+  /* These are set dynamically by useTheme hook, defaults here are fallbacks */
+  --bg: 30 30 46;
+  --bg-hex: #1e1e2e;
+  --fg: 224 224 224;
+  --fg-hex: #e0e0e0;
+  --card: 38 38 54;
+  --card-hex: #262636;
+  --card-fg: 224 224 224;
+  --card-fg-hex: #e0e0e0;
+  --border: 58 58 74;
+  --border-hex: #3a3a4a;
+  --input: 42 42 58;
+  --input-hex: #2a2a3a;
+  --primary: 167 139 250;
+  --primary-hex: #a78bfa;
+  --primary-fg: 26 26 46;
+  --primary-fg-hex: #1a1a2e;
+  --muted: 42 42 58;
+  --muted-hex: #2a2a3a;
+  --muted-fg: 136 136 136;
+  --muted-fg-hex: #888888;
+  --destructive: 239 68 68;
+  --destructive-hex: #ef4444;
+  --success: 34 197 94;
+  --success-hex: #22c55e;
+  --warning: 245 158 11;
+  --warning-hex: #f59e0b;
+
+  --ring: 167 139 250;
+  --radius: 0.5rem;
+}
+
+/* === Light Mode Defaults === */
+:root[data-theme="light"] {
+  --bg: 245 245 247;
+  --bg-hex: #f5f5f7;
+  --fg: 30 30 46;
+  --fg-hex: #1e1e2e;
+  --card: 255 255 255;
+  --card-hex: #ffffff;
+  --card-fg: 30 30 46;
+  --card-fg-hex: #1e1e2e;
+  --border: 212 212 216;
+  --border-hex: #d4d4d8;
+  --input: 232 232 236;
+  --input-hex: #e8e8ec;
+  --primary: 124 90 207;
+  --primary-hex: #7c5acf;
+  --primary-fg: 255 255 255;
+  --primary-fg-hex: #ffffff;
+  --muted: 232 232 236;
+  --muted-hex: #e8e8ec;
+  --muted-fg: 107 107 123;
+  --muted-fg-hex: #6b6b7b;
+  --destructive: 220 38 38;
+  --destructive-hex: #dc2626;
+  --success: 22 163 74;
+  --success-hex: #16a34a;
+  --warning: 217 119 6;
+  --warning-hex: #d97706;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+#root {
+  height: 100vh;
+  width: 100%;
+}
+
+body {
+  background: rgb(var(--bg));
+  color: rgb(var(--fg));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--bg) / 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--border));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muted-fg) / 0.4);
+}

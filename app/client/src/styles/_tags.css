@@ -1,0 +1,405 @@
+/* ===== Tag Manager ===== */
+.tag-manager {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.5rem;
+  background: rgb(var(--card));
+}
+
+.tag-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.25rem 0.5rem;
+}
+
+.tag-manager-header h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tag-add-btn {
+  background: none;
+  border: none;
+  color: rgb(var(--primary));
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+
+.tag-add-btn:hover {
+  background: rgb(var(--primary) / 0.15);
+}
+
+.tag-create-form {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgb(var(--muted));
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+.tag-input {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  background: rgb(var(--input));
+  color: rgb(var(--fg));
+  border: 1px solid rgb(var(--border));
+  border-radius: 3px;
+  outline: none;
+}
+
+.tag-input:focus {
+  border-color: rgb(var(--ring));
+}
+
+.tag-color-picker {
+  width: 28px;
+  height: 28px;
+  border: 2px solid rgb(var(--border));
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+}
+
+.tag-create-confirm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.72rem;
+  background: rgb(var(--primary));
+  color: rgb(var(--primary-foreground));
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.tag-create-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tag-section {
+  margin-bottom: 0.75rem;
+}
+
+.tag-section h4 {
+  font-size: 0.72rem;
+  color: rgb(var(--muted-foreground));
+  margin: 0.25rem 0 0.35rem 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  padding: 0 0.25rem;
+}
+
+.tag-list-scroll {
+  max-height: 150px;
+  overflow-y: auto;
+  flex-wrap: nowrap;
+  flex-direction: column;
+}
+
+.tag-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  border-radius: 10px;
+  border: 1px solid;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+
+.tag-badge:hover {
+  opacity: 0.8;
+}
+
+.tag-badge-active .tag-remove {
+  font-size: 0.7rem;
+  margin-left: 0.15rem;
+  opacity: 0.7;
+}
+
+.tag-badge-active .tag-remove:hover {
+  opacity: 1;
+}
+
+.tag-badge-add {
+  border-style: dashed;
+}
+
+.tag-badge-add:hover {
+  border-style: solid;
+}
+
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tag-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.15rem 0.25rem;
+}
+
+.tag-row:hover {
+  background: rgb(var(--card) / 0.3);
+  border-radius: 3px;
+}
+
+.tag-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: none;
+  color: rgb(var(--fg));
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
+  border-radius: 3px;
+}
+
+.tag-filter-btn:hover {
+  background: rgb(var(--card) / 0.5);
+}
+
+.tag-filter-btn.active {
+  background: rgb(var(--primary) / 0.15);
+  font-weight: 600;
+}
+
+.tag-actions {
+  display: flex;
+  gap: 0.1rem;
+  opacity: 0;
+}
+
+.tag-row:hover .tag-actions {
+  opacity: 1;
+}
+
+.tag-action-btn {
+  background: none;
+  border: none;
+  color: rgb(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.2rem;
+  border-radius: 2px;
+}
+
+.tag-action-btn:hover {
+  background: rgb(var(--card));
+  color: rgb(var(--fg));
+}
+
+.tag-action-delete:hover {
+  color: rgb(var(--destructive));
+}
+
+.tag-edit-form {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.tag-edit-input {
+  width: 80px;
+  padding: 0.15rem 0.3rem;
+  font-size: 0.72rem;
+  background: rgb(var(--input));
+  color: rgb(var(--fg));
+  border: 1px solid rgb(var(--ring));
+  border-radius: 3px;
+  outline: none;
+}
+
+.tag-edit-save,
+.tag-edit-cancel {
+  background: none;
+  border: none;
+  color: rgb(var(--fg));
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+}
+
+.tag-edit-save:hover,
+.tag-edit-cancel:hover {
+  background: rgb(var(--card));
+}
+
+.tag-clear-filter {
+  background: none;
+  border: none;
+  color: rgb(var(--muted-foreground));
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0.1rem;
+  margin-left: 0.25rem;
+}
+
+.tag-clear-filter:hover {
+  color: rgb(var(--fg));
+}
+
+.tag-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tag-file-item {
+  text-align: left;
+  background: none;
+  border: none;
+  color: rgb(var(--primary));
+  font-size: 0.72rem;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-file-item:hover {
+  background: rgb(var(--card) / 0.5);
+}
+
+.tag-loading,
+.tag-empty {
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgb(var(--muted-foreground));
+}
+
+/* Tag badges in File Explorer */
+.explorer-tag-badges {
+  display: inline-flex;
+  gap: 0.15rem;
+  margin-left: 0.25rem;
+  flex-shrink: 0;
+}
+
+.explorer-tag-badge {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Simple tag banner inserted into margin editor */
+.tiptap .tag-banner {
+  display: inline-block;
+  padding: 0.3em 0.8em;
+  font-size: 0.85em;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 6px;
+  background: #111111;
+  color: #fbbf24;
+  border: 2px solid #a855f7;
+  box-shadow: 0 0 8px 2px rgba(168, 85, 247, 0.45);
+  white-space: nowrap;
+  cursor: default;
+  line-height: 1.6;
+  margin: 0.25em 0;
+}
+
+/* Interactive tag banner (in MarginPanel - with remove button) */
+.tag-banner-interactive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  padding: 0.25em 0.6em 0.25em 0.7em;
+  font-size: 0.78em;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 6px;
+  background: #111111;
+  color: var(--tag-color, #fbbf24);
+  border: 2px solid var(--tag-color, #a855f7);
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--tag-color, #a855f7) 40%, transparent);
+  white-space: nowrap;
+  cursor: default;
+  line-height: 1.4;
+}
+
+.tag-remove-btn {
+  background: none;
+  border: none;
+  color: var(--tag-color, #fbbf24);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+
+.tag-remove-btn:hover {
+  opacity: 1;
+  color: #f87171;
+}
+
+/* Tag banner in toolbar (compact preview) */
+.toolbar-tag-banner {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15em 0.5em;
+  font-size: 0.72em;
+  font-weight: 700;
+  font-family: inherit;
+  border-radius: 4px;
+  background: #111111;
+  color: #fbbf24;
+  border: 1.5px solid #a855f7;
+  box-shadow: 0 0 6px 1px rgba(168, 85, 247, 0.35);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* Fallback inline tag badge (for any existing content) */
+.tiptap .tag-badge-inline {
+  display: inline-block;
+  padding: 0.05em 0.45em;
+  font-size: 0.85em;
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: 4px;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  white-space: nowrap;
+  cursor: default;
+  line-height: 1.4;
+  margin: 0 0.1em;
+}
+

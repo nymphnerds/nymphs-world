@@ -1,0 +1,1018 @@
+/* ============================================
+   Conversation Designer - Dark Theme
+   ============================================ */
+
+.conv-designer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  border-radius: inherit;
+}
+
+/* Header */
+.conv-designer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  min-height: 48px;
+}
+
+.conv-designer__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.conv-designer__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Main layout - two panels */
+.conv-designer__body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Left Sidebar */
+.conv-designer__sidebar {
+  width: 260px;
+  min-width: 260px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.conv-designer__sidebar-section {
+  padding: 0.75rem;
+  border: 2px solid rgb(var(--border) / 0.6);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+
+.conv-designer__sidebar-section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Participant chips */
+.conv-participant {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  margin-bottom: 0.3rem;
+  font-size: 0.78rem;
+  cursor: default;
+}
+
+/* Selectable participant */
+.conv-participant--selectable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  border: 1px solid transparent;
+}
+
+.conv-participant--selectable:hover {
+  background: var(--bg-quaternary);
+}
+
+.conv-participant--selected {
+  background: color-mix(in srgb, var(--accent-indigo) 15%, transparent);
+  border-color: var(--accent-indigo);
+}
+
+.conv-participant__avatar {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.conv-participant__avatar--player {
+  background: var(--accent-green);
+}
+
+.conv-participant__name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-participant__remove {
+  opacity: 0.5;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 2px;
+}
+
+.conv-participant__remove:hover {
+  opacity: 1;
+}
+
+/* Thread list */
+.conv-thread-group {
+  margin-bottom: 0.5rem;
+}
+
+.conv-thread-group__header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.conv-thread-group__badge {
+  background: var(--bg-quaternary);
+  padding: 0 0.35rem;
+  border-radius: 8px;
+  font-size: 0.65rem;
+}
+
+.conv-thread-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  transition: background 0.15s;
+}
+
+.conv-thread-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.conv-thread-item--selected {
+  background: var(--accent-indigo);
+  background: color-mix(in srgb, var(--accent-indigo) 20%, transparent);
+  outline: 1px solid var(--accent-indigo);
+}
+
+.conv-thread-item--idle { border-left: 2px solid #a78bfa; }
+.conv-thread-item--ambient { border-left: 2px solid #60a5fa; }
+.conv-thread-item--interactive { border-left: 2px solid #818cf8; }
+
+.conv-thread-item__title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Add thread dialog */
+.conv-new-thread {
+  padding: 0.75rem;
+}
+
+.conv-new-thread__type-options {
+  display: flex;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.conv-type-btn {
+  flex: 1;
+  padding: 0.35rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.conv-type-btn:hover {
+  border-color: var(--accent-indigo);
+}
+
+.conv-type-btn--active {
+  border-color: var(--accent-indigo);
+  background: color-mix(in srgb, var(--accent-indigo) 15%, transparent);
+  color: var(--text-primary);
+}
+
+/* Center Canvas */
+.conv-designer__canvas {
+  flex: 1;
+  min-width: 400px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-primary);
+  border: 2px solid rgb(var(--border) / 0.6);
+  border-radius: 6px;
+  margin: 0.5rem;
+}
+
+.conv-canvas__viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.conv-canvas__viewport:active {
+  cursor: grabbing;
+}
+
+.conv-canvas__grid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--border-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* Canvas header */
+.conv-canvas__header {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  z-index: 10;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Canvas toolbar */
+.conv-canvas__toolbar {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
+  border-radius: 8px;
+  z-index: 10;
+  font-size: 0.7rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.conv-canvas__toolbar button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.conv-canvas__toolbar button:hover {
+  background: var(--bg-quaternary);
+  color: var(--text-primary);
+}
+
+.conv-canvas__zoom {
+  padding: 0 0.3rem;
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  min-width: 36px;
+  text-align: center;
+}
+
+/* Speech Bubble Node */
+.conv-node {
+  position: absolute;
+  min-width: 180px;
+  max-width: 280px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  cursor: move;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  z-index: 5;
+}
+
+.conv-node:hover {
+  border-color: var(--accent-indigo);
+}
+
+.conv-node--selected {
+  border-color: var(--accent-indigo);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-indigo) 40%, transparent);
+}
+
+.conv-node--idle { border-left: 3px solid #a78bfa; }
+.conv-node--ambient { border-left: 3px solid #60a5fa; }
+.conv-node--interactive { border-left: 3px solid #818cf8; }
+
+.conv-node__header {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.conv-node__speech {
+  padding: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--text-primary);
+  min-height: 24px;
+}
+
+.conv-node__action {
+  padding: 0 0.5rem 0.3rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.conv-node__badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.conv-node__badge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, #f59e0b 8%, transparent);
+  border: 1px solid color-mix(in srgb, #f59e0b 25%, transparent);
+  color: #f59e0b;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-node__badge:hover {
+  background: color-mix(in srgb, #f59e0b 15%, transparent);
+  border-color: #f59e0b;
+}
+
+/* Connection dots on nodes */
+.conv-node__dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--border-color);
+  border: 2px solid var(--bg-secondary);
+  cursor: crosshair;
+  z-index: 6;
+  transition: background 0.15s;
+}
+
+.conv-node__dot:hover {
+  background: var(--accent-indigo);
+}
+
+.conv-node__dot--top { top: -5px; left: 50%; transform: translateX(-50%); }
+.conv-node__dot--bottom { bottom: -5px; left: 50%; transform: translateX(-50%); }
+.conv-node__dot--right { right: -5px; top: 50%; transform: translateY(-50%); }
+
+/* SVG Connection Lines */
+.conv-canvas__connections {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.conv-canvas__connections line,
+.conv-canvas__connections path {
+  pointer-events: stroke;
+}
+
+.conv-connection-line {
+  stroke: var(--border-color);
+  stroke-width: 2;
+  fill: none;
+  marker-end: url(#conv-arrowhead);
+}
+
+.conv-connection-line--active {
+  stroke: var(--accent-indigo);
+  stroke-width: 2.5;
+}
+
+.conv-connection-line--choice {
+  stroke: #f59e0b;
+  stroke-width: 1.5;
+  fill: none;
+  stroke-dasharray: 6 3;
+}
+
+/* Choice nodes */
+.conv-choice {
+  position: absolute;
+  min-width: 120px;
+  background: var(--bg-secondary);
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  z-index: 5;
+  transition: background 0.15s;
+}
+
+.conv-choice:hover {
+  background: color-mix(in srgb, #f59e0b 10%, transparent);
+}
+
+.conv-choice--selected {
+  box-shadow: 0 0 0 2px color-mix(in srgb, #f59e0b 40%, transparent);
+}
+
+/* Right Properties Panel */
+.conv-designer__props {
+  width: 280px;
+  min-width: 280px;
+  border-left: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+}
+
+.conv-props__section {
+  padding: 0.75rem;
+  border: 2px solid rgb(var(--border) / 0.6);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background: var(--bg-tertiary);
+}
+
+.conv-props__section-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.conv-props__field {
+  margin-bottom: 0.5rem;
+}
+
+.conv-props__label {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.conv-props__input,
+.conv-props__textarea,
+.conv-props__select {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-family: inherit;
+}
+
+.conv-props__textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+.conv-props__input:focus,
+.conv-props__textarea:focus,
+.conv-props__select:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+}
+
+.conv-props__row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.conv-props__row .conv-props__field {
+  flex: 1;
+}
+
+/* Empty state */
+.conv-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.conv-empty__icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.3;
+}
+
+.conv-empty__tips {
+  margin-top: 0.75rem;
+  text-align: left;
+  font-size: 0.7rem;
+}
+
+/* Node outcome badges */
+.conv-node__outcomes {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0 0.5rem 0.4rem;
+  flex-wrap: wrap;
+}
+
+.conv-node__outcome-badge {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  background: var(--bg-quaternary);
+  color: var(--text-muted);
+}
+
+.conv-node__outcome--stat { border: 1px solid #22c55e44; color: #22c55e; }
+.conv-node__outcome--item { border: 1px solid #60a5fa44; color: #60a5fa; }
+.conv-node__outcome--perk { border: 1px solid #a78bfa44; color: #a78bfa; }
+.conv-node__outcome--alignment { border: 1px solid #ec489944; color: #ec4899; }
+
+/* Node tool active glow */
+.conv-node--tool-active {
+  cursor: pointer;
+}
+
+.conv-node--tool-active:hover {
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--accent-indigo) 60%, transparent);
+}
+
+/* Idle Chatter Section in Right Panel */
+.conv-idle-thread {
+  margin-bottom: 0.5rem;
+}
+
+.conv-idle-thread__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.conv-idle-thread__header:hover {
+  background: var(--bg-quaternary);
+}
+
+.conv-idle-thread__count {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.conv-idle-line {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+  color: var(--text-muted);
+}
+
+.conv-idle-line:hover {
+  background: var(--bg-quaternary);
+}
+
+.conv-idle-line__speaker {
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.conv-idle-line__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conv-idle-line__more {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Ambient NPC Thread Section */
+.conv-ambient-thread {
+  margin-bottom: 0.5rem;
+}
+
+.conv-ambient-thread__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.conv-ambient-thread__header:hover {
+  background: var(--bg-quaternary);
+}
+
+.conv-ambient-thread__count {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.conv-ambient-thread__participants {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  padding: 0.2rem 0.4rem;
+}
+
+.conv-ambient-thread__part {
+  font-size: 0.65rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  background: var(--bg-quaternary);
+  color: var(--text-muted);
+}
+
+/* Tools Grid */
+.conv-tools-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem;
+}
+
+.conv-tool-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+
+.conv-tool-btn:hover {
+  border-color: var(--tool-color, var(--accent-indigo));
+  background: var(--bg-quaternary);
+}
+
+.conv-tool-btn--active {
+  border-color: var(--tool-color, var(--accent-indigo));
+  background: color-mix(in srgb, var(--tool-color, var(--accent-indigo)) 15%, transparent);
+  color: var(--text-primary);
+}
+
+.conv-tool-btn__icon {
+  flex-shrink: 0;
+}
+
+.conv-tool-btn__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conv-tool-hint {
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent-indigo) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent-indigo) 30%, transparent);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* Choice tool icons (small colored icons on choice badges) */
+.conv-choice__tool-icons {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  display: flex;
+  gap: 1px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.conv-choice__tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+/* Applied Tools listing in Choice Properties panel */
+.conv-choice-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.4rem;
+  margin-top: 0.25rem;
+  border-radius: 4px;
+  background: var(--bg-quaternary);
+  font-size: 0.7rem;
+  transition: background 0.15s;
+}
+
+.conv-choice-tool-row:hover {
+  background: color-mix(in srgb, #ef4444 5%, var(--bg-quaternary));
+}
+
+.conv-choice-tool-row__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.conv-choice-tool-row__label {
+  flex: 1;
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.conv-choice-tool-row__value {
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.conv-choice-tool-row__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: #ef4444;
+  cursor: pointer;
+  border-radius: 3px;
+  opacity: 0.6;
+  transition: opacity 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+
+.conv-choice-tool-row__remove:hover {
+  opacity: 1;
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+}
+
+/* Status Bar */
+.conv-designer__status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0.75rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  min-height: 24px;
+}
+
+/* Buttons */
+.conv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.conv-btn:hover {
+  border-color: var(--accent-indigo);
+  color: var(--text-primary);
+}
+
+.conv-btn--primary {
+  background: var(--accent-indigo);
+  border-color: var(--accent-indigo);
+  color: white;
+}
+
+.conv-btn--primary:hover {
+  background: color-mix(in srgb, var(--accent-indigo) 85%, black);
+}
+
+.conv-btn--danger {
+  color: #ef4444;
+  border-color: color-mix(in srgb, #ef4444 30%, transparent);
+}
+
+.conv-btn--danger:hover {
+  background: color-mix(in srgb, #ef4444 10%, transparent);
+  border-color: #ef4444;
+}
+
+.conv-btn--sm {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.65rem;
+}
+
+.conv-btn--icon {
+  padding: 0.25rem;
+  min-width: 24px;
+  justify-content: center;
+}
+
+/* Add participant input */
+.conv-add-participant {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.conv-add-participant input {
+  flex: 1;
+  padding: 0.3rem 0.4rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.7rem;
+}
+
+.conv-add-participant input:focus {
+  outline: none;
+  border-color: var(--accent-indigo);
+}
+
+/* Thread type badge */
+.conv-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.conv-type-badge--idle {
+  background: color-mix(in srgb, #a78bfa 15%, transparent);
+  color: #a78bfa;
+}
+
+.conv-type-badge--ambient {
+  background: color-mix(in srgb, #60a5fa 15%, transparent);
+  color: #60a5fa;
+}
+
+.conv-type-badge--interactive {
+  background: color-mix(in srgb, #818cf8 15%, transparent);
+  color: #818cf8;
+}
+
+/* Toggle switch */
+.conv-toggle {
+  position: relative;
+  width: 32px;
+  height: 18px;
+  background: var(--bg-quaternary);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.conv-toggle--active {
+  background: var(--accent-indigo);
+}
+
+.conv-toggle__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: white;
+  border-radius: 50%;
+  transition: left 0.2s;
+}
+
+.conv-toggle--active .conv-toggle__knob {
+  left: 16px;
+}
+
+/* Scrollbar styling */
+.conv-designer__sidebar::-webkit-scrollbar,
+.conv-designer__props::-webkit-scrollbar {
+  width: 4px;
+}
+
+.conv-designer__sidebar::-webkit-scrollbar-thumb,
+.conv-designer__props::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+/* ============================================
+   Panel Resizers
+   ============================================ */
+
+.conv-resizer {
+  width: 4px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  z-index: 20;
+}
+
+.conv-resizer:hover,
+.conv-resizer:active {
+  background: rgb(var(--primary) / 0.5);
+}

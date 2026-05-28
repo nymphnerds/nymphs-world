@@ -1,0 +1,442 @@
+/* Editor area */
+.editor-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgb(var(--bg));
+}
+
+.editor-wrapper {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.split-container {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.split-pane {
+  height: 100%;
+  overflow: hidden;
+}
+
+.split-pane.main-pane {
+  flex: 0 0 70%;
+  min-width: 200px;
+}
+
+.split-divider {
+  width: 4px;
+  background: rgb(var(--border) / 0.3);
+  cursor: col-resize;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.split-divider:hover,
+.split-divider.active {
+  background: rgb(var(--primary) / 0.5);
+}
+
+.split-pane.margin-pane {
+  flex: 0 0 30%;
+  min-width: 100px;
+}
+
+
+.tiptap {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1.5rem 2rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: #f5f5f5;
+}
+
+/* Spellcheck misspelled words - red wavy underline */
+.spellcheck-misspelled {
+  text-decoration: underline wavy #ff4444;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  border-radius: 2px;
+  background: rgba(255, 68, 68, 0.1);
+  padding: 0 1px;
+}
+
+/* Spellcheck suggestion tooltip */
+.spellcheck-tooltip {
+  position: absolute;
+  z-index: 10000;
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 4px 2px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.spellcheck-suggestion {
+  background: none;
+  border: none;
+  color: #e2e8f0;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.spellcheck-suggestion:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Ensure text inside TipTap is always light colored */
+.tiptap p,
+.tiptap li,
+.tiptap blockquote,
+.tiptap span {
+  color: inherit;
+}
+
+/* Headings with subtle blue underline — thickness scales with heading level */
+.tiptap h1,
+.tiptap h2,
+.tiptap h3,
+.tiptap h4,
+.tiptap h5,
+.tiptap h6 {
+  color: inherit;
+  border-bottom-style: solid;
+  border-bottom-color: rgba(96, 165, 250, 0.35);
+  padding-bottom: 0.2em;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.tiptap h1 {
+  font-size: 2em;
+  border-bottom-width: 3px;
+}
+
+.tiptap h2 {
+  font-size: 1.6em;
+  border-bottom-width: 2.5px;
+}
+
+.tiptap h3 {
+  font-size: 1.3em;
+  border-bottom-width: 2px;
+}
+
+.tiptap h4 {
+  font-size: 1.1em;
+  border-bottom-width: 1.5px;
+}
+
+.tiptap h5 {
+  font-size: 1em;
+  border-bottom-width: 1px;
+}
+
+.tiptap h6 {
+  font-size: 0.9em;
+  border-bottom-width: 0.75px;
+}
+
+.tiptap :first-child {
+  margin-top: 0;
+}
+
+.tiptap p {
+  overlap: 0.5rem;
+}
+
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 0.5rem 0;
+  cursor: default;
+}
+
+.tiptap img:hover {
+  outline: 2px solid rgb(var(--primary) / 0.5);
+  cursor: pointer;
+}
+
+
+/* Main editor area */
+.editor-main .tiptap {
+  background: rgb(var(--bg));
+}
+
+/* Draggable split divider between main and margin editors */
+.editor-split-divider {
+  width: 4px;
+  min-width: 4px;
+  background: rgb(var(--border) / 0.3);
+  cursor: col-resize;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.editor-split-divider:hover,
+.editor-split-divider.active {
+  background: rgb(var(--primary) / 0.5);
+}
+
+/* Margin editor panel */
+.editor-margin-panel .tiptap {
+  background: rgb(var(--card));
+}
+
+.editor-margin-content {
+  background: rgb(var(--card));
+}
+
+/* Editor toolbar */
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  background: rgb(var(--card));
+  border-bottom: 1px solid rgb(var(--border));
+  flex-wrap: wrap;
+}
+
+.editor-toolbar-btn {
+  padding: 0.25rem 0.4rem;
+  font-size: 0.7rem;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: rgb(var(--fg));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+}
+
+.editor-toolbar-btn:hover {
+  background: rgb(var(--card));
+  border-color: rgb(var(--border));
+}
+
+.editor-toolbar-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.editor-toolbar-separator {
+  width: 1px;
+  height: 16px;
+  background: rgb(var(--border));
+  margin: 0 0.2rem;
+}
+
+/* Settings page */
+
+/* Settings page */
+.settings-container {
+  padding: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.settings-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.settings-section {
+  margin-bottom: 1.5rem;
+}
+
+.settings-section h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: rgb(var(--muted-foreground));
+}
+
+.settings-field {
+  margin-bottom: 0.75rem;
+}
+
+.settings-field label {
+  display: block;
+  font-size: 0.78rem;
+  margin-bottom: 0.25rem;
+  color: rgb(var(--muted-foreground));
+}
+
+.settings-field input,
+.settings-field select,
+.settings-field textarea {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.8rem;
+  background: rgb(var(--input));
+  color: rgb(var(--fg));
+  border: 1px solid rgb(var(--border));
+  border-radius: 4px;
+  outline: none;
+}
+
+.settings-field input:focus,
+.settings-field select:focus,
+.settings-field textarea:focus {
+  border-color: rgb(var(--ring));
+}
+
+
+/* ===== Ghost Text (AI Completion) ===== */
+.ghost-text-suggestion {
+  color: rgb(var(--muted-foreground) / 0.5) !important;
+  font-style: italic;
+  pointer-events: none;
+  user-select: none;
+  white-space: pre;
+  position: relative;
+  z-index: 1;
+}
+
+/* Ghost text should appear inline with the cursor */
+.ProseMirror .ghost-text-suggestion {
+  display: inline;
+}
+
+/* ===== WikiLink Styles ===== */
+
+/* Base wiki link - pill-style inline link */
+.wiki-link {
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin: 0 -2px;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  font-weight: 500;
+  display: inline;
+}
+
+/* Existing document link - vibrant blue pill */
+.wiki-link-exists {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+
+.wiki-link-exists:hover {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.4);
+}
+
+/* Missing document link - blue pill (same as exists) */
+.wiki-link-missing {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+
+.wiki-link-missing:hover {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.4);
+}
+
+/* Resolving state - blue pill */
+.wiki-link-resolving {
+  color: #60a5fa;
+  background: rgba(96, 165, 250, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.2);
+}
+
+.wiki-link-resolving:hover {
+  color: #93c5fd;
+  background: rgba(96, 165, 250, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.4);
+}
+
+/* Hover popover */
+.wiki-link-popover {
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
+  border-radius: 8px;
+  padding: 12px;
+  max-width: 320px;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: rgb(var(--fg));
+}
+
+.wiki-link-popover-btn {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 11px;
+  background: rgb(var(--primary) / 0.2);
+  color: rgb(var(--primary));
+  border: 1px solid rgb(var(--primary) / 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.wiki-link-popover-btn:hover {
+  background: rgb(var(--primary) / 0.3);
+}
+
+/* Autocomplete dropdown */
+.wiki-link-autocomplete {
+  background: rgb(var(--card));
+  border: 1px solid rgb(var(--border));
+  border-radius: 8px;
+  min-width: 280px;
+  max-width: 360px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  color: rgb(var(--fg));
+}
+
+.wiki-link-autocomplete-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-radius: 4px;
+  margin: 2px 4px;
+}
+
+.wiki-link-autocomplete-item:hover,
+.wiki-link-autocomplete-item.selected {
+  background: rgb(var(--primary) / 0.15);
+}
+
+.wiki-link-autocomplete-create {
+  border-top: 1px solid rgb(var(--border));
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.wiki-link-popover-btn-create {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.wiki-link-popover-btn-create:hover {
+  background: rgba(245, 158, 11, 0.3);
+}
+
+

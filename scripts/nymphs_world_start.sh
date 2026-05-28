@@ -17,8 +17,13 @@ if [[ ! -f "${NYMPHS_WORLD_SERVER_ENTRYPOINT}" ]]; then
   exit 1
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "ERROR: python3 is required by the NymphsCore base runtime." >&2
+if ! command -v node >/dev/null 2>&1; then
+  echo "ERROR: Node.js is required by the WORBI-based ${NYMPHS_WORLD_MODULE_NAME} runtime." >&2
+  exit 1
+fi
+
+if [[ ! -d "${NYMPHS_WORLD_SERVER_DIR}/node_modules/express" && ! -d "${NYMPHS_WORLD_APP_DIR}/node_modules/express" ]]; then
+  echo "ERROR: server dependencies are missing. Run Install or Update first." >&2
   exit 1
 fi
 
@@ -40,17 +45,32 @@ fi
 
 echo "Starting ${NYMPHS_WORLD_MODULE_NAME}..."
 (
-  cd "${NYMPHS_WORLD_INSTALL_DIR}"
-  nohup python3 "${NYMPHS_WORLD_SERVER_ENTRYPOINT}" \
-    --host "${NYMPHS_WORLD_HOST}" \
-    --port "${NYMPHS_WORLD_PORT}" \
-    --projects-root "${NYMPHS_WORLD_PROJECTS_ROOT}" \
-    --ui-root "${NYMPHS_WORLD_INSTALL_DIR}/ui" \
-    > "${NYMPHS_WORLD_SERVER_LOG}" 2>&1 &
-  echo "$!" > "${NYMPHS_WORLD_PID_FILE}"
+  cd "${NYMPHS_WORLD_SERVER_DIR}"
+  export PORT="${NYMPHS_WORLD_PORT}"
+  export NYMPHS_WORLD_HOST="${NYMPHS_WORLD_HOST}"
+  export NYMPHS_WORLD_MODULE_ID="${NYMPHS_WORLD_MODULE_ID}"
+  export NYMPHS_WORLD_MODULE_NAME="${NYMPHS_WORLD_MODULE_NAME}"
+  export NYMPHS_WORLD_DATA_ROOT="${NYMPHS_WORLD_DATA_ROOT}"
+  export NYMPHS_WORLD_PROJECTS_ROOT="${NYMPHS_WORLD_PROJECTS_ROOT}"
+  export NYMPHS_WORLD_USERS_ROOT="${NYMPHS_WORLD_USERS_ROOT}"
+  export NYMPHS_WORLD_USERS_JSON="${NYMPHS_WORLD_USERS_JSON}"
+  export NYMPHS_WORLD_USER_SETTINGS_DIR="${NYMPHS_WORLD_USER_SETTINGS_DIR}"
+  export NYMPHS_WORLD_META_DIR="${NYMPHS_WORLD_META_DIR}"
+
+  if command -v setsid >/dev/null 2>&1; then
+    setsid -f bash -c 'printf "%s\n" "$$" > "$1"; exec node src/index.js > "$2" 2>&1' _ "${NYMPHS_WORLD_PID_FILE}" "${NYMPHS_WORLD_SERVER_LOG}"
+  else
+    nohup bash -c 'printf "%s\n" "$$" > "$1"; exec node src/index.js > "$2" 2>&1' _ "${NYMPHS_WORLD_PID_FILE}" "${NYMPHS_WORLD_SERVER_LOG}" >/dev/null 2>&1 &
+  fi
 )
 
-pid="$(cat "${NYMPHS_WORLD_PID_FILE}" 2>/dev/null || true)"
+pid=""
+for _ in $(seq 1 20); do
+  pid="$(cat "${NYMPHS_WORLD_PID_FILE}" 2>/dev/null || true)"
+  [[ -n "${pid}" ]] && break
+  sleep 0.1
+done
+
 for _ in $(seq 1 30); do
   if nymphs_world_health_ok; then
     echo "${NYMPHS_WORLD_MODULE_NAME} started (PID: ${pid})"

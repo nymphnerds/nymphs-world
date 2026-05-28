@@ -12,16 +12,16 @@ version=not-installed
 running=false
 state=available
 health=unavailable
-python_ready=false
+node_ready=false
 detail="${NYMPHS_WORLD_MODULE_NAME} is not installed."
 
-if command -v python3 >/dev/null 2>&1; then
-  python_ready=true
+if command -v node >/dev/null 2>&1; then
+  node_ready=true
 fi
 
 if [[ -f "${NYMPHS_WORLD_MARKER_FILE}" ]]; then
   installed=true
-  runtime_present=true
+  [[ -f "${NYMPHS_WORLD_SERVER_ENTRYPOINT}" ]] && runtime_present=true
   version="$(head -n 1 "${NYMPHS_WORLD_MARKER_FILE}" 2>/dev/null || true)"
   [[ -n "${version}" ]] || version=unknown
 fi
@@ -39,10 +39,14 @@ elif [[ "${installed}" == "true" ]]; then
   fi
 fi
 
-if [[ "${installed}" == "true" && "${python_ready}" == "false" ]]; then
+if [[ "${installed}" == "true" && "${runtime_present}" == "false" ]]; then
+  state=repair_needed
+  health=repair-needed
+  detail="${NYMPHS_WORLD_MODULE_NAME} is installed, but the WORBI-based server files are missing."
+elif [[ "${installed}" == "true" && "${node_ready}" == "false" ]]; then
   state=needs_attention
   health=degraded
-  detail="${NYMPHS_WORLD_MODULE_NAME} is installed, but python3 is missing."
+  detail="${NYMPHS_WORLD_MODULE_NAME} is installed, but Node.js is missing."
 elif [[ "${installed}" == "true" && "${running}" == "true" ]]; then
   state=running
   if nymphs_world_health_ok; then
@@ -66,13 +70,14 @@ installed=${installed}
 runtime_present=${runtime_present}
 data_present=${data_present}
 version=${version}
-python_ready=${python_ready}
+node_ready=${node_ready}
 running=${running}
 state=${state}
 health=${health}
 install_root=${NYMPHS_WORLD_INSTALL_DIR}
 data_root=${NYMPHS_WORLD_DATA_ROOT}
 projects_root=${NYMPHS_WORLD_PROJECTS_ROOT}
+users_root=${NYMPHS_WORLD_USERS_ROOT}
 logs_dir=${NYMPHS_WORLD_LOGS_DIR}
 last_log=${NYMPHS_WORLD_SERVER_LOG}
 marker=${NYMPHS_WORLD_MARKER_FILE}

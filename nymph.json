@@ -3,8 +3,8 @@
   "id": "nymphs-world",
   "name": "Nymphs World",
   "short_name": "NW",
-  "version": "0.1.1",
-  "description": "Private development build of the Nymphs World page-first worldbuilding vault.",
+  "version": "0.2.0",
+  "description": "Private development build of Nymphs World using the current WORBI workspace as its UI and app base.",
   "category": "tool",
   "kind": "worldbuilding",
   "packaging": "repo",
@@ -27,11 +27,11 @@
   },
   "runtime": {
     "host": "127.0.0.1",
-    "port": 8098,
-    "frontend_url": "http://127.0.0.1:8098",
-    "backend_url": "http://127.0.0.1:8098",
-    "health_url": "http://127.0.0.1:8098/health",
-    "server_info_url": "http://127.0.0.1:8098/server_info"
+    "port": 8083,
+    "frontend_url": "http://127.0.0.1:8083",
+    "backend_url": "http://127.0.0.1:8083",
+    "health_url": "http://127.0.0.1:8083/api/health",
+    "server_info_url": "http://127.0.0.1:8083/server_info"
   },
   "artifacts": {
     "data_root": "$HOME/NymphsData/nymphs-world",
@@ -66,7 +66,7 @@
     "manager_ui": {
       "type": "local_url",
       "title": "Nymphs World",
-      "url": "http://127.0.0.1:8098",
+      "url": "http://127.0.0.1:8083",
       "requires_running": true,
       "start_action": "open",
       "stop_action": "stop"
@@ -111,7 +111,7 @@
     ]
   },
   "overview": {
-    "body": "Private dev build. Current slice: local project folders, Markdown pages, wikilinks, backlinks, and vault diagnostics."
+    "body": "Private dev build. Current slice: WORBI-derived workspace UI running as the Nymphs World module, with data and logs kept under NymphsData while project-root adaptation continues."
   },
   "uninstall": {
     "supports_purge": true,

@@ -4,10 +4,20 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .DS_Store
+*.bak
+*.new
+node_modules/
+app/node_modules/
+app/server/node_modules/
+app/client/node_modules/
+dist/
+app/client/dist/
+!app/server/dist/
+!app/server/dist/**
 
 # Local runtime/data should stay under NymphsData or the installed module root.
-logs/
-projects/
-data/
-config/
-.nymph-module-version
+/logs/
+/projects/
+/data/
+/config/
+/.nymph-module-version
