@@ -45,6 +45,9 @@ fi
 
 install -m 644 "${REPO_DIR}/nymph.json" "${staging_dir}/nymph.json"
 install -m 644 "${REPO_DIR}/README.md" "${staging_dir}/README.md"
+if [[ -f "${REPO_DIR}/CHANGELOG.md" ]]; then
+  install -m 644 "${REPO_DIR}/CHANGELOG.md" "${staging_dir}/CHANGELOG.md"
+fi
 
 mkdir -p "${staging_dir}/scripts"
 install -m 755 "${REPO_DIR}/scripts/"*.sh "${staging_dir}/scripts/"

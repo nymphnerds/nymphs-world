@@ -41,6 +41,9 @@ mkdir -p "${NYMPHS_WORLD_INSTALL_DIR}/scripts"
 mkdir -p "${NYMPHS_WORLD_INSTALL_DIR}/app"
 install_file_if_different 644 "${MODULE_ROOT}/nymph.json" "${NYMPHS_WORLD_INSTALL_DIR}/nymph.json"
 install_file_if_different 644 "${MODULE_ROOT}/README.md" "${NYMPHS_WORLD_INSTALL_DIR}/README.md"
+if [[ -f "${MODULE_ROOT}/CHANGELOG.md" ]]; then
+  install_file_if_different 644 "${MODULE_ROOT}/CHANGELOG.md" "${NYMPHS_WORLD_INSTALL_DIR}/CHANGELOG.md"
+fi
 for script_file in "${MODULE_ROOT}/scripts/"*.sh; do
   install_file_if_different 755 "${script_file}" "${NYMPHS_WORLD_INSTALL_DIR}/scripts/$(basename "${script_file}")"
 done
