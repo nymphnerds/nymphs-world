@@ -28,6 +28,7 @@ const defaultUserSettings = {
   codex: {
     enabled: false,
     loginMethod: 'device-code',
+    reasoningEffort: 'medium',
   },
   modelName: '',           // Selected model name
   maxTokens: 4096,

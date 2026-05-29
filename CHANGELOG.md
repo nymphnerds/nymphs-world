@@ -4,6 +4,25 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.2 - 2026-05-29 Codex Settings Cleanup
+
+Changed:
+
+- Moved Codex controls into a dedicated Settings tab.
+- Reduced Codex sign-in to one primary `Sign In` action plus `Check`.
+- Removed API-only inference controls from the Codex path.
+- Added Codex reasoning power selection and routes the selected effort into
+  Codex creative turns.
+- Widened the Settings panel when opened from the WORBI activity bar.
+- Switched WSL sign-in opening to the Windows default browser path with
+  fallbacks.
+
+Verified:
+
+- Client production build passed.
+- Server syntax checks passed for Codex service/config.
+- Installed runtime was updated and verified at `http://127.0.0.1:8083`.
+
 ## 0.2.1 - 2026-05-28 Codex Sign-In Provider Lane
 
 Added:

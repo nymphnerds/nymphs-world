@@ -1,6 +1,6 @@
 {
   "name": "nymphs-world",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "private": true,
   "description": "Nymphs World by Nymphs - WORBI-derived worldbuilding workspace for NymphsCore",
   "workspaces": [

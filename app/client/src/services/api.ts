@@ -130,6 +130,7 @@ export interface LLMSettings {
   codex?: {
     enabled: boolean;
     loginMethod: 'device-code' | 'browser';
+    reasoningEffort?: string;
   };
   modelName: string;
   maxTokens: number;

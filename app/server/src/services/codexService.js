@@ -161,51 +161,72 @@ function validateBrowserUrl(url) {
   return parsed.toString();
 }
 
-function getBrowserLauncher(url) {
+function getBrowserLaunchers(url) {
   if (process.platform === 'win32' || process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
-    return {
-      command: 'powershell.exe',
-      args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
-      label: 'Windows default browser',
-    };
+    return [
+      {
+        command: 'cmd.exe',
+        args: ['/c', 'start', '', url],
+        label: 'Windows default browser',
+      },
+      {
+        command: 'explorer.exe',
+        args: [url],
+        label: 'Windows URL handler',
+      },
+      {
+        command: 'powershell.exe',
+        args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
+        label: 'PowerShell default browser',
+      },
+    ];
   }
 
   if (process.platform === 'darwin') {
-    return {
+    return [{
       command: 'open',
       args: [url],
       label: 'macOS default browser',
-    };
+    }];
   }
 
-  return {
+  return [{
     command: 'xdg-open',
     args: [url],
     label: 'system default browser',
-  };
+  }];
 }
 
 async function openExternalUrl(url) {
   const safeUrl = validateBrowserUrl(url);
-  const launcher = getBrowserLauncher(safeUrl);
+  const launchers = getBrowserLaunchers(safeUrl);
+  let lastError = null;
 
-  return new Promise((resolve, reject) => {
-    const child = spawn(launcher.command, launcher.args, {
-      detached: true,
-      stdio: 'ignore',
-      windowsHide: true,
-      env: process.env,
-    });
+  for (const launcher of launchers) {
+    try {
+      return await new Promise((resolve, reject) => {
+        const child = spawn(launcher.command, launcher.args, {
+          detached: true,
+          stdio: 'ignore',
+          windowsHide: true,
+          env: process.env,
+        });
 
-    child.once('error', reject);
-    child.once('spawn', () => {
-      child.unref?.();
-      resolve({
-        opened: true,
-        via: launcher.label,
+        child.once('error', reject);
+        child.once('spawn', () => {
+          child.unref?.();
+          resolve({
+            opened: true,
+            via: launcher.label,
+          });
+        });
       });
-    });
-  });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('No system browser launcher is available.');
 }
 
 function normalizeVersion(output) {
@@ -454,7 +475,16 @@ async function sendCodexCreativeTurn({
     const modelsResponse = await client.request('model/list', { limit: 20, includeHidden: false }, APP_SERVER_TIMEOUT_MS);
     const models = normalizeModelList(modelsResponse);
     const model = pickCodexModel(models, settings?.modelName);
-    const defaultEffort = models.find((entry) => entry.id === model)?.defaultReasoningEffort || null;
+    const modelInfo = models.find((entry) => entry.id === model || entry.model === model);
+    const supportedEfforts = new Set(
+      (modelInfo?.supportedReasoningEfforts || [])
+        .map((entry) => entry?.reasoningEffort)
+        .filter(Boolean)
+    );
+    const requestedEffort = settings?.codex?.reasoningEffort || null;
+    const reasoningEffort = requestedEffort && (!supportedEfforts.size || supportedEfforts.has(requestedEffort))
+      ? requestedEffort
+      : modelInfo?.defaultReasoningEffort || null;
     const prompt = buildCodexCreativePrompt({ messages, documentContent, systemPrompt, purpose });
 
     const thread = await client.request('thread/start', {
@@ -487,7 +517,7 @@ async function sendCodexCreativeTurn({
       approvalsReviewer: 'user',
       sandboxPolicy: { type: 'readOnly', networkAccess: false },
       ...(model ? { model } : {}),
-      ...(defaultEffort ? { effort: defaultEffort } : {}),
+      ...(reasoningEffort ? { effort: reasoningEffort } : {}),
     }, APP_SERVER_TIMEOUT_MS);
 
     const turnId = turn?.turn?.id;

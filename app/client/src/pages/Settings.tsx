@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { X, Check, AlertCircle, Settings as SettingsIcon, Zap, Shield, RefreshCw, Eye, EyeOff, Sparkles, Palette, Tags, MapPin, Clock, ListTree, GitGraph, Image as ImageIcon, Bell, LayoutPanelLeft, Wrench, MessageSquare, ExternalLink, KeyRound, Copy } from 'lucide-react';
+import { X, Check, AlertCircle, Settings as SettingsIcon, Zap, Shield, RefreshCw, Eye, EyeOff, Sparkles, Palette, Tags, MapPin, Clock, ListTree, GitGraph, Image as ImageIcon, Bell, LayoutPanelLeft, Wrench, MessageSquare, ExternalLink } from 'lucide-react';
 import { useLLM } from '../hooks/useLLM';
 import { getMaxTabs, setMaxTabs } from '../hooks/useFiles';
 import { ThemePicker } from '../components/ThemePicker';
@@ -33,7 +33,7 @@ const PROVIDER_PRESETS = [
   { id: 'custom', name: 'Custom (any OpenAI-compatible server)', group: 'other', defaultUrl: '', requiresApiKey: false },
 ];
 
-type SettingsTab = 'llm' | 'tools' | 'images' | 'editor' | 'appearance';
+type SettingsTab = 'llm' | 'codex' | 'tools' | 'images' | 'editor' | 'appearance';
 
 interface SettingsProps {
   onClose: () => void;
@@ -74,6 +74,31 @@ const dotClass = (status: string): string => {
     default: return 'bg-[#444]';
   }
 };
+
+const REASONING_LABELS: Record<string, string> = {
+  minimal: 'Minimal',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
+  xhigh: 'Very High',
+};
+
+function reasoningLabel(value: string): string {
+  return REASONING_LABELS[value] || value.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function codexReasoningOptions(model: CodexProbe['models'][number] | null | undefined, savedEffort?: string | null) {
+  const fromModel = (model?.supportedReasoningEfforts || [])
+    .map((entry) => entry.reasoningEffort)
+    .filter((value): value is string => Boolean(value));
+  const values = fromModel.length ? fromModel : ['low', 'medium', 'high'];
+  const defaultEffort = model?.defaultReasoningEffort || savedEffort;
+  const unique = Array.from(new Set([defaultEffort, savedEffort, ...values].filter(Boolean) as string[]));
+  return unique.map((value) => ({
+    value,
+    label: reasoningLabel(value),
+  }));
+}
 
 export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   const {
@@ -234,8 +259,10 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
       apiKey: formApiKey,
       modelName: formModelName,
       codex: {
+        ...settings.codex,
         enabled: formProviderId === 'codex',
-        loginMethod: 'device-code' as const,
+        loginMethod: 'browser' as const,
+        reasoningEffort: settings.codex?.reasoningEffort || 'medium',
       },
       serverType: formProviderId === 'ollama' ? 'ollama' : '',
     };
@@ -297,35 +324,31 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
     }
   }, [formModelName, updateSettings]);
 
-  const openCodexLoginUrl = useCallback((loginUrl: string | null | undefined) => {
-    if (!loginUrl) return;
-    navigator.clipboard?.writeText(loginUrl).catch(() => {});
-  }, []);
-
-  const handleCopyCodexCode = useCallback(async () => {
-    if (!codexLogin?.userCode) return;
-    try {
-      await navigator.clipboard.writeText(codexLogin.userCode);
-    } catch {
-      // Clipboard access can fail outside secure/browser contexts; the visible code remains copyable.
-    }
-  }, [codexLogin?.userCode]);
-
-  const handleCopyCodexUrl = useCallback(async () => {
-    const loginUrl = codexLogin?.authUrl || codexLogin?.verificationUrl;
-    if (!loginUrl) return;
-    try {
-      await navigator.clipboard.writeText(loginUrl);
-    } catch {
-      // The visible open action remains available if clipboard access is blocked.
-    }
-  }, [codexLogin?.authUrl, codexLogin?.verificationUrl]);
+  const saveCodexSettings = useCallback(async (partialCodex: Partial<NonNullable<typeof settings.codex>> = {}, modelName = formModelName) => {
+    const merged = {
+      ...settings,
+      providerId: 'codex',
+      baseUrl: '',
+      apiKey: '',
+      modelName,
+      codex: {
+        ...settings.codex,
+        enabled: true,
+        loginMethod: 'browser' as const,
+        reasoningEffort: settings.codex?.reasoningEffort || 'medium',
+        ...partialCodex,
+      },
+    };
+    setFormProviderId('codex');
+    setFormBaseUrl('');
+    setFormApiKey('');
+    setFormModelName(modelName);
+    updateSettings(merged);
+    await saveUserSettings(merged);
+  }, [formModelName, saveUserSettings, settings, updateSettings]);
 
   const handleOpenCodexLoginSession = useCallback(async () => {
-    if (!codexLogin?.loginId) {
-      openCodexLoginUrl(codexLogin?.authUrl || codexLogin?.verificationUrl);
-      return;
-    }
+    if (!codexLogin?.loginId) return;
     setCodexLoading(true);
     setCodexError(null);
     try {
@@ -338,13 +361,14 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
     } finally {
       setCodexLoading(false);
     }
-  }, [codexLogin, openCodexLoginUrl]);
+  }, [codexLogin]);
 
   const handleStartCodexLogin = useCallback(async (method: 'browser' | 'device-code') => {
     setCodexLoading(true);
     setCodexError(null);
     setCodexLogin(null);
     try {
+      await saveCodexSettings({ loginMethod: method });
       const login = await startCodexLogin(method, method === 'browser');
       setCodexLogin(login);
       if (login.externalOpen && !login.externalOpen.opened) {
@@ -360,7 +384,19 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
     } finally {
       setCodexLoading(false);
     }
-  }, [handleRefreshCodexStatus]);
+  }, [handleRefreshCodexStatus, saveCodexSettings]);
+
+  const handleCodexSignIn = useCallback(async () => {
+    if (codexLogin?.loginId && codexLogin.status === 'pending') {
+      await handleOpenCodexLoginSession();
+      return;
+    }
+    await handleStartCodexLogin('browser');
+  }, [codexLogin?.loginId, codexLogin?.status, handleOpenCodexLoginSession, handleStartCodexLogin]);
+
+  const handleCodexReasoningChange = useCallback(async (reasoningEffort: string) => {
+    await saveCodexSettings({ reasoningEffort });
+  }, [saveCodexSettings]);
 
   useEffect(() => {
     if (!codexLogin?.loginId || codexLogin.status !== 'pending') return;
@@ -443,16 +479,17 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   // Group providers
   const localPresets = PROVIDER_PRESETS.filter((p) => p.group === 'local');
   const cloudPresets = PROVIDER_PRESETS.filter((p) => p.group === 'cloud');
-  const subscriptionPresets = PROVIDER_PRESETS.filter((p) => p.group === 'subscription');
   const otherPresets = PROVIDER_PRESETS.filter((p) => p.group === 'other');
 
   // Check if selected provider requires API key
   const selectedPreset = PROVIDER_PRESETS.find((p) => p.id === formProviderId);
   const requiresApiKey = selectedPreset?.requiresApiKey || false;
-  const providerWarning = selectedPreset?.warning;
+  const providerWarning = formProviderId === 'codex' ? null : selectedPreset?.warning;
   const isCodexProvider = formProviderId === 'codex';
-  const codexLoginUrl = codexLogin?.authUrl || codexLogin?.verificationUrl || null;
   const codexLoginDisabled = codexLoading || codexStatus?.appServerDaemon.available === false;
+  const selectedCodexModel = codexProbe?.models?.find((model) => model.id === formModelName || model.model === formModelName) || null;
+  const codexReasoning = settings.codex?.reasoningEffort || selectedCodexModel?.defaultReasoningEffort || 'medium';
+  const codexReasoningChoices = codexReasoningOptions(selectedCodexModel, codexReasoning);
   const codexAccountLabel = codexStatus?.loggedIn
     ? (codexStatus.loginLabel || 'ChatGPT').replace(/^Logged in using\s+/i, '')
     : codexStatus?.loginLabel || 'Not checked';
@@ -490,6 +527,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
       <div className="flex border-b border-[var(--border-hex)] overflow-x-auto scrollbar-thin">
         {([
           { key: 'llm' as SettingsTab, label: 'LLM', icon: SettingsIcon },
+          { key: 'codex' as SettingsTab, label: 'Codex', icon: Sparkles },
           { key: 'tools' as SettingsTab, label: 'Tools', icon: Zap },
           { key: 'images' as SettingsTab, label: 'Images', icon: Sparkles },
           { key: 'editor' as SettingsTab, label: 'Editor', icon: SettingsIcon },
@@ -498,7 +536,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
           <button
             key={key}
             onClick={() => setActiveTab(key)}
-            className={`flex-shrink-0 flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
+            className={`flex-shrink-0 flex items-center gap-2 px-3 py-3 text-sm font-medium transition-colors border-b-2 ${
               activeTab === key
                 ? 'border-[var(--primary-hex)] text-[var(--fg-hex)]'
                 : 'border-transparent text-[var(--muted-fg-hex)] hover:text-[var(--fg-hex)]'
@@ -511,7 +549,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 max-w-2xl">
+      <div className="flex-1 overflow-y-auto p-4 max-w-2xl">
         {/* === LLM Tab === */}
         {activeTab === 'llm' && (
           <>
@@ -534,10 +572,11 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
               <div>
                 <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">Provider</label>
                 <select
-                  value={formProviderId}
+                  value={isCodexProvider ? '' : formProviderId}
                   onChange={(e) => handleProviderChange(e.target.value)}
                   className={`${selectClass} w-full`}
                 >
+                  {isCodexProvider && <option value="">Codex active</option>}
                   <optgroup label="Local (no API key)">
                     {localPresets.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -550,11 +589,6 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                       </option>
                     ))}
                   </optgroup>
-                  <optgroup label="Subscription sign-in">
-                    {subscriptionPresets.map((p) => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                    ))}
-                  </optgroup>
                   <optgroup label="Other">
                     {otherPresets.map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
@@ -564,174 +598,13 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                 <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">Select a provider to auto-fill the URL below, then configure your connection.</p>
               </div>
 
-              {isCodexProvider ? (
-                <div className="rounded-md border border-[var(--border-hex)] bg-[var(--card-hex)]/40 p-3 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="min-w-0 truncate text-sm font-semibold">Codex Sign In</h3>
-                    <button
-                      onClick={handleRefreshCodexStatus}
-                      disabled={codexLoading}
-                      className="inline-flex shrink-0 items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-[var(--primary-hex)]/20 text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/30 transition-colors disabled:opacity-50"
-                    >
-                      <RefreshCw size={13} className={codexLoading ? 'animate-spin' : ''} />
-                      {codexLoading ? 'Checking...' : 'Check'}
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-[5.75rem_minmax(0,1fr)] gap-x-2 gap-y-2 text-xs">
-                    <div className="contents">
-                      <span className="text-[var(--muted-fg-hex)]">CLI</span>
-                      <span className={`min-w-0 justify-self-end text-right ${codexStatus?.available ? 'text-green-400' : codexStatus ? 'text-red-400' : 'text-[var(--muted-fg-hex)]'}`}>
-                        {codexStatus?.available ? codexStatus.cliVersion || 'Available' : 'Not checked'}
-                      </span>
-                    </div>
-                    <div className="contents">
-                      <span className="text-[var(--muted-fg-hex)]">Account</span>
-                      <span className={`min-w-0 justify-self-end break-words text-right ${codexAccountClass}`}>
-                        {codexAccountLabel}
-                      </span>
-                    </div>
-                    <div className="contents">
-                      <span className="text-[var(--muted-fg-hex)]">App server</span>
-                      <span className={`min-w-0 justify-self-end text-right ${codexStatus?.appServerDaemon.available ? 'text-green-400' : codexStatus ? 'text-yellow-400' : 'text-[var(--muted-fg-hex)]'}`}>
-                        {codexStatus?.appServerDaemon.available ? 'Ready' : 'Not checked'}
-                      </span>
-                    </div>
-                    <div className="contents">
-                      <span className="text-[var(--muted-fg-hex)]">Plan</span>
-                      <span className={`min-w-0 justify-self-end break-words text-right ${codexProbe?.account ? 'text-green-400' : 'text-[var(--muted-fg-hex)]'}`}>
-                        {codexProbe?.account?.planType || codexProbe?.account?.type || 'Not probed'}
-                      </span>
-                    </div>
-                    <div className="contents">
-                      <span className="text-[var(--muted-fg-hex)]">Models</span>
-                      <span className={`min-w-0 justify-self-end text-right ${codexProbe?.models?.length ? 'text-green-400' : 'text-[var(--muted-fg-hex)]'}`}>
-                        {codexProbe?.models?.length ? `${codexProbe.models.length} available` : 'Not loaded'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">Model</label>
-                    <select
-                      value={formModelName}
-                      onChange={async (e) => {
-                        const newModel = e.target.value;
-                        setFormModelName(newModel);
-                        updateSettings({ modelName: newModel });
-                        await saveUserSettings({
-                          ...settings,
-                          providerId: 'codex',
-                          baseUrl: '',
-                          apiKey: '',
-                          modelName: newModel,
-                          codex: {
-                            enabled: true,
-                            loginMethod: 'device-code',
-                          },
-                        });
-                      }}
-                      disabled={codexLoading || !codexProbe?.models?.length}
-                      className={`${selectClass} disabled:opacity-50`}
-                    >
-                      {formModelName && !codexProbe?.models?.some((model) => model.id === formModelName) && (
-                        <option key="saved" value={formModelName}>✓ {formModelName}</option>
-                      )}
-                      <option value="">-- Select a model --</option>
-                      {codexProbe?.models?.map((model) => (
-                        <option key={model.id} value={model.id}>
-                          {model.displayName || model.id}{model.isDefault ? ' · default' : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-[11px] text-[var(--muted-fg-hex)] mt-1">
-                      {formModelName ? `Active: ${formModelName}` : 'Run Check to load Codex models.'}
-                    </p>
-                  </div>
-
-                  {Boolean(codexError || codexStatus?.warnings?.length) && (
-                    <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-300">
-                      {codexError || codexStatus?.warnings?.[0]}
-                    </div>
-                  )}
-
-                  {codexLogin && (
-                    <div className="rounded-md border border-[var(--border-hex)] bg-[var(--bg-hex)]/40 p-3 text-xs">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-[var(--muted-fg-hex)]">
-                          {codexLogin.method === 'device-code' ? 'Device code sign-in' : 'Browser sign-in'}
-                        </span>
-                        <span className={codexLogin.status === 'completed' ? 'text-green-400' : codexLogin.status === 'pending' ? 'text-yellow-400' : 'text-red-400'}>
-                          {codexLogin.status}
-                        </span>
-                      </div>
-                      {codexLogin.userCode && (
-                        <div className="mt-3 rounded-md border border-[var(--border-hex)] bg-[var(--card-hex)]/50 p-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[var(--muted-fg-hex)]">Code</span>
-                            <button
-                              type="button"
-                              onClick={handleCopyCodexCode}
-                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[10px] text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/10"
-                            >
-                              <Copy size={11} />
-                              Copy
-                            </button>
-                          </div>
-                          <div className="mt-1 font-mono text-base tracking-wider text-[var(--fg-hex)]">{codexLogin.userCode}</div>
-                        </div>
-                      )}
-                      {codexLoginUrl && codexLogin.status === 'pending' && (
-                        <div className="mt-3 grid grid-cols-1 gap-2">
-                          <button
-                            type="button"
-                            onClick={handleOpenCodexLoginSession}
-                            disabled={codexLoading}
-                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-[var(--border-hex)] px-3 py-1.5 text-xs text-[var(--fg-hex)] hover:bg-[var(--card-hex)] transition-colors disabled:opacity-50"
-                          >
-                            <ExternalLink size={13} />
-                            {codexLogin.method === 'device-code' ? 'Open Device Page' : 'Open Sign-In Page'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleCopyCodexUrl}
-                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/10 transition-colors"
-                          >
-                            <Copy size={13} />
-                            Copy Sign-In Link
-                          </button>
-                        </div>
-                      )}
-                      {codexLogin.status === 'completed' && (
-                        <p className="mt-2 text-[11px] text-green-400">Sign-in completed. Run Check to refresh models.</p>
-                      )}
-                      {codexLogin.error && <p className="mt-2 text-red-400">{codexLogin.error}</p>}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-1 gap-2">
-                      <button
-                        onClick={() => handleStartCodexLogin('browser')}
-                        disabled={codexLoginDisabled}
-                        className="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-colors hover:brightness-110 disabled:opacity-50"
-                      >
-                        <ExternalLink size={13} />
-                        {codexLoading ? 'Opening...' : 'Browser Sign In'}
-                      </button>
-                      <button
-                        onClick={() => handleStartCodexLogin('device-code')}
-                        disabled={codexLoginDisabled}
-                        className="inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-[var(--border-hex)] px-3 py-1.5 text-xs text-[var(--fg-hex)] transition-colors hover:bg-[var(--bg-hex)] disabled:opacity-50"
-                      >
-                        <KeyRound size={13} />
-                        Device Code
-                      </button>
-                    </div>
-                    <p className="text-[11px] leading-relaxed text-[var(--muted-fg-hex)]">If browser sign-in misbehaves, use Device Code.</p>
-                  </div>
+              {isCodexProvider && (
+                <div className="rounded-md border border-[var(--border-hex)] bg-[var(--card-hex)]/40 p-3 text-xs text-[var(--muted-fg-hex)]">
+                  Codex is active. Use the Codex tab for sign-in, model, and reasoning power.
                 </div>
-              ) : (
+              )}
+
+              {!isCodexProvider && (
                 <>
                   {/* URL — always visible for manual configuration */}
                   <div>
@@ -838,9 +711,6 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                       </button>
                     </div>
                   </div>
-                </>
-              )}
-
               {/* Max Tokens */}
               <div>
                 <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">Max Tokens</label>
@@ -982,8 +852,150 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                   {saved ? 'Saved!' : 'Save Settings'}
                 </button>
               </div>
+                </>
+              )}
             </div>
           </>
+        )}
+
+        {/* === Codex Tab === */}
+        {activeTab === 'codex' && (
+          <div className="space-y-5">
+            <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-300">
+              Codex uses ChatGPT/Codex sign-in, not an API key.
+            </div>
+
+            <div className="rounded-md border border-[var(--border-hex)] bg-[var(--card-hex)]/40 p-3 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="min-w-0 truncate text-sm font-semibold">Codex</h3>
+                <button
+                  onClick={handleRefreshCodexStatus}
+                  disabled={codexLoading}
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md bg-[var(--primary-hex)]/20 text-[var(--primary-hex)] hover:bg-[var(--primary-hex)]/30 transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw size={13} className={codexLoading ? 'animate-spin' : ''} />
+                  Check
+                </button>
+              </div>
+
+              <div className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-x-3 gap-y-2 text-xs">
+                <span className="text-[var(--muted-fg-hex)]">CLI</span>
+                <span className={`min-w-0 justify-self-end text-right ${codexStatus?.available ? 'text-green-400' : codexStatus ? 'text-red-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                  {codexStatus?.available ? codexStatus.cliVersion || 'Available' : 'Not checked'}
+                </span>
+                <span className="text-[var(--muted-fg-hex)]">Account</span>
+                <span className={`min-w-0 justify-self-end break-words text-right ${codexAccountClass}`}>
+                  {codexAccountLabel}
+                </span>
+                <span className="text-[var(--muted-fg-hex)]">Server</span>
+                <span className={`min-w-0 justify-self-end text-right ${codexStatus?.appServerDaemon.available ? 'text-green-400' : codexStatus ? 'text-yellow-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                  {codexStatus?.appServerDaemon.available ? 'Ready' : 'Not checked'}
+                </span>
+                <span className="text-[var(--muted-fg-hex)]">Plan</span>
+                <span className={`min-w-0 justify-self-end break-words text-right ${codexProbe?.account ? 'text-green-400' : 'text-[var(--muted-fg-hex)]'}`}>
+                  {codexProbe?.account?.planType || codexProbe?.account?.type || 'Not loaded'}
+                </span>
+              </div>
+
+              {Boolean(codexError || codexStatus?.warnings?.length) && (
+                <div className="rounded-md border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-300">
+                  {codexError || codexStatus?.warnings?.[0]}
+                </div>
+              )}
+
+              {codexLogin?.status === 'pending' && (
+                <div className="flex items-center justify-between gap-3 rounded-md border border-[var(--border-hex)] bg-[var(--bg-hex)]/40 px-3 py-2 text-xs">
+                  <span className="text-[var(--muted-fg-hex)]">Sign-in</span>
+                  <span className="text-yellow-400">Pending</span>
+                </div>
+              )}
+
+              {codexLogin?.status === 'completed' && (
+                <div className="rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-400">
+                  Signed in. Run Check to refresh models.
+                </div>
+              )}
+
+              {codexLogin?.error && (
+                <div className="rounded-md border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+                  {codexLogin.error}
+                </div>
+              )}
+
+              <button
+                onClick={handleCodexSignIn}
+                disabled={codexLoginDisabled}
+                className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-colors hover:brightness-110 disabled:opacity-50"
+              >
+                <ExternalLink size={13} />
+                {codexLoading ? 'Opening...' : 'Sign In'}
+              </button>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">Model</label>
+              <select
+                value={formModelName}
+                onChange={async (e) => {
+                  await saveCodexSettings({}, e.target.value);
+                }}
+                disabled={codexLoading || !codexProbe?.models?.length}
+                className={`${selectClass} disabled:opacity-50`}
+              >
+                {formModelName && !codexProbe?.models?.some((model) => model.id === formModelName) && (
+                  <option key="saved" value={formModelName}>{formModelName}</option>
+                )}
+                <option value="">Select model</option>
+                {codexProbe?.models?.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.displayName || model.id}{model.isDefault ? ' · default' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-2 uppercase tracking-wider">Reasoning Power</label>
+              <div className="grid grid-cols-2 gap-2">
+                {codexReasoningChoices.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleCodexReasoningChange(option.value)}
+                    className={`min-h-9 rounded-md border px-3 py-1.5 text-xs transition-colors ${
+                      codexReasoning === option.value
+                        ? 'border-[var(--primary-hex)] bg-[var(--primary-hex)] text-[var(--primary-fg-hex)]'
+                        : 'border-[var(--border-hex)] bg-[var(--card-hex)] text-[var(--fg-hex)] hover:bg-[var(--bg-hex)]'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">System Prompt</label>
+              <textarea
+                value={settings.systemPrompt}
+                onChange={(e) => updateSettings({ systemPrompt: e.target.value })}
+                rows={6}
+                className={`${inputClass} resize-y`}
+                placeholder="Enter system prompt..."
+              />
+            </div>
+
+            <div className="flex items-center gap-3 pt-3 border-t border-[var(--border-hex)]">
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-all disabled:opacity-50 hover:brightness-110"
+              >
+                {saved ? <Check size={14} /> : <SettingsIcon size={14} />}
+                {saved ? 'Saved!' : 'Save'}
+              </button>
+            </div>
+          </div>
         )}
 
         {/* === Tools Tab === */}
