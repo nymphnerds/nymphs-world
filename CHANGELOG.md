@@ -4,6 +4,21 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.12 - 2026-05-29 Restart Running Server On Update
+
+Changed:
+
+- Updating Nymphs World now stops a running module server before files are
+  replaced and starts it again after the update succeeds.
+- This prevents Manager from showing a fresh installed version while an old
+  Node process continues serving stale backend code.
+- The module-owned stop action is labeled `Close UI` in Manager, while still
+  running the module's `stop` entrypoint.
+
+Verified:
+
+- Update script syntax check passed.
+
 ## 0.2.11 - 2026-05-29 Robust Codex Browser Handoff
 
 Changed:

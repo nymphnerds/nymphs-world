@@ -3,7 +3,7 @@
   "id": "nymphs-world",
   "name": "Nymphs World",
   "short_name": "NW",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "description": "Private development build of Nymphs World using the current WORBI workspace as its UI and app base.",
   "category": "tool",
   "kind": "worldbuilding",
@@ -98,7 +98,7 @@
       },
       {
         "id": "stop",
-        "label": "Stop",
+        "label": "Close UI",
         "entrypoint": "stop",
         "result": "show_output"
       },

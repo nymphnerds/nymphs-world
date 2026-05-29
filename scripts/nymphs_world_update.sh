@@ -12,6 +12,16 @@ if [[ ! -f "${NYMPHS_WORLD_MARKER_FILE}" ]]; then
 fi
 
 module_version="$(nymphs_world_version_from_manifest "${MODULE_ROOT}/nymph.json")"
+was_running=false
+if pid="$(nymphs_world_tracked_pid 2>/dev/null)"; then
+  was_running=true
+  echo "${NYMPHS_WORLD_MODULE_NAME} is running (PID: ${pid}); stopping it before update."
+  "${SCRIPT_DIR}/nymphs_world_stop.sh"
+elif nymphs_world_health_ok; then
+  was_running=true
+  echo "${NYMPHS_WORLD_MODULE_NAME} is responding; stopping it before update."
+  "${SCRIPT_DIR}/nymphs_world_stop.sh"
+fi
 
 codex_bin="$(nymphs_world_codex_bin)"
 if [[ -n "${codex_bin}" ]]; then
@@ -66,3 +76,8 @@ printf '%s\n' "${module_version}" > "${NYMPHS_WORLD_MARKER_FILE}"
 
 echo "${NYMPHS_WORLD_MODULE_NAME} module wrappers updated."
 echo "installed_version=${module_version}"
+
+if [[ "${was_running}" == "true" ]]; then
+  echo "Restarting ${NYMPHS_WORLD_MODULE_NAME} after update..."
+  "${NYMPHS_WORLD_INSTALL_DIR}/scripts/nymphs_world_start.sh"
+fi

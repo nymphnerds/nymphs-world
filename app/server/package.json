@@ -1,6 +1,6 @@
 {
   "name": "nymphs-world-server",
-  "version": "0.2.11",
+  "version": "0.2.12",
   "private": true,
   "description": "Nymphs World WORBI-derived backend server",
   "type": "module",

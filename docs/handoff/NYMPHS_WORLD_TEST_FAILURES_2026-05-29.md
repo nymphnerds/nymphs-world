@@ -119,6 +119,17 @@ Follow-up repair in `0.2.11`:
   are no longer exposed to Windows launcher argument parsing.
 - Added a focused route test for the redirect behavior.
 
+Follow-up repair in `0.2.12`:
+
+- Found a stale Nymphs World Node process that survived the module update and
+  kept serving pre-update Codex routes.
+- The update script now stops a running Nymphs World server before replacing
+  app files, then restarts it after a successful update.
+- This keeps Manager's installed version, the files on disk, and the live
+  backend process in sync.
+- The module-owned `stop` action is labeled `Close UI` so users see the action
+  in the module action area without a Manager-owned rail change.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -147,6 +158,7 @@ Focused server result after `0.2.8`: 2 test files, 31 tests passed.
 Focused server result after `0.2.9`: 2 test files, 31 tests passed.
 Focused Codex service result after `0.2.10`: 1 test file, 6 tests passed.
 Focused Codex result after `0.2.11`: 2 test files, 7 tests passed.
+Update lifecycle script result after `0.2.12`: syntax check passed.
 
 ## Root Workspace Vitest Startup Failure
 
