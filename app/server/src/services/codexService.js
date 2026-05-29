@@ -648,10 +648,15 @@ function getCodexLoginStatus(loginId) {
   return serializeLoginSession(loginSessions.get(loginId));
 }
 
-async function openCodexLoginSession(loginId) {
+function getCodexLoginUrl(loginId) {
   const session = loginSessions.get(loginId);
-  if (!session) return null;
-  const loginUrl = session.response?.authUrl || session.response?.verificationUrl;
+  const loginUrl = session?.response?.authUrl || session?.response?.verificationUrl;
+  return loginUrl ? validateBrowserUrl(loginUrl) : null;
+}
+
+async function openCodexLoginSession(loginId) {
+  const loginUrl = getCodexLoginUrl(loginId);
+  if (!loginSessions.has(loginId)) return null;
   if (!loginUrl) {
     const err = new Error('Codex sign-in session does not have a browser URL.');
     err.statusCode = 404;
@@ -682,6 +687,7 @@ async function cancelCodexLogin(loginId) {
 export {
   cancelCodexLogin,
   fetchCodexModels,
+  getCodexLoginUrl,
   getCodexLoginStatus,
   getCodexStatus,
   openCodexLoginSession,

@@ -109,6 +109,16 @@ Follow-up repair in `0.2.10`:
 - Added a focused unit test that asserts the JSON-RPC login params sent to the
   Codex app-server.
 
+Follow-up repair in `0.2.11`:
+
+- Test WSL still produced OpenAI `missing_required_parameter` pages on `0.2.10`.
+- Root cause: the long Codex/OpenAI OAuth URL was still passed directly through
+  the Windows/WSL external browser process boundary.
+- Browser sign-in now opens a short local Nymphs World URL instead. The server
+  responds with `302` to the exact Codex `authUrl`, so OAuth query parameters
+  are no longer exposed to Windows launcher argument parsing.
+- Added a focused route test for the redirect behavior.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -136,6 +146,7 @@ Focused server result after `0.2.7`: 2 test files, 31 tests passed.
 Focused server result after `0.2.8`: 2 test files, 31 tests passed.
 Focused server result after `0.2.9`: 2 test files, 31 tests passed.
 Focused Codex service result after `0.2.10`: 1 test file, 6 tests passed.
+Focused Codex result after `0.2.11`: 2 test files, 7 tests passed.
 
 ## Root Workspace Vitest Startup Failure
 

@@ -4,6 +4,22 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.11 - 2026-05-29 Robust Codex Browser Handoff
+
+Changed:
+
+- Browser Codex sign-in now opens a short local Nymphs World URL and redirects
+  from the server to the exact Codex `authUrl`.
+- The long OpenAI OAuth URL is no longer passed as a Windows/WSL process
+  argument, avoiding missing-parameter auth errors across test machines.
+- Added a focused route test that verifies the short local URL redirects to the
+  exact Codex auth URL without changing query parameters.
+
+Verified:
+
+- Server Codex route/service/index syntax checks passed.
+- Focused Codex service and redirect tests passed: 2 files, 7 tests.
+
 ## 0.2.10 - 2026-05-29 Restore Official Codex Browser Login Contract
 
 Changed:
