@@ -890,7 +890,7 @@ export default function App() {
 
             {/* Left Panel - File Explorer or Search */}
             {showSettings ? (
-          <div style={{ width: Math.max(leftWidth, 440), minWidth: Math.max(leftWidth, 440), overflow: 'hidden' }}>
+          <div style={{ width: leftWidth, minWidth: leftWidth, overflow: 'hidden' }}>
             <Settings onClose={() => setShowSettings(false)} onOpenMaintenance={() => setShowMaintenance(true)} />
           </div>
         ) : activeActivity === 'explorer' ? (

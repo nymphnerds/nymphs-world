@@ -4,6 +4,25 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.3 - 2026-05-29 Codex LLM Layout Repair
+
+Changed:
+
+- Restored the WORBI left settings panel to the normal resizable sidebar width.
+- Kept Codex inside the LLM provider section instead of a separate top-level
+  settings tab.
+- Hid API-key and sampling controls when `Codex Sign In` is selected.
+- Kept Codex to one primary `Sign In` action plus `Check`, model, reasoning
+  power, and system prompt controls.
+
+Verified:
+
+- Client typecheck passed.
+- Client production build passed.
+- Focused Codex/LLM server tests passed: 29 tests.
+- Installed runtime updated to `0.2.3` and verified at
+  `http://127.0.0.1:8083`.
+
 ## 0.2.2 - 2026-05-29 Codex Settings Cleanup
 
 Changed:
