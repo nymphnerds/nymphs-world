@@ -279,7 +279,7 @@ function pickCodexModel(models, requestedModel) {
 
 function normalizeLoginMethod(method) {
   if (method === 'browser' || method === 'chatgpt') {
-    return { type: 'chatgpt', codexStreamlinedLogin: true };
+    return { type: 'chatgpt' };
   }
   return { type: 'chatgptDeviceCode' };
 }

@@ -4,6 +4,25 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.6 - 2026-05-29 Codex Sign-In Contract Repair
+
+Changed:
+
+- Changed Codex browser sign-in to use the documented app-server request shape:
+  `{ "type": "chatgpt" }`.
+- Removed the extra streamlined-login flag from Nymphs World's app-server login
+  request while keeping device-code sign-in as a separate fallback path.
+- Reset the WORBI left explorer width onto another fresh persisted key so test
+  WSL installs are not stuck with the oversized sidebar value from the bad UI
+  build.
+
+Verified:
+
+- Client typecheck passed.
+- Client production build passed.
+- Server Codex route/service syntax checks passed.
+- Focused Codex/LLM server tests passed: 31 tests.
+
 ## 0.2.5 - 2026-05-29 Test WSL Codex and Layout Repair
 
 Changed:

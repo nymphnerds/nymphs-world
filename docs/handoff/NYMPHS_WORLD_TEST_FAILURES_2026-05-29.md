@@ -40,6 +40,17 @@ Follow-up repair in `0.2.5`:
 - If Codex is already logged in and `account/read` succeeds, the sign-in action
   now returns completed instead of opening another OAuth page.
 
+Follow-up repair in `0.2.6`:
+
+- The public `openai/codex` app-server documentation describes browser
+  ChatGPT managed auth as `account/login/start` with exactly
+  `{ "type": "chatgpt" }`, then opening the returned `authUrl`.
+- Nymphs World removed the extra `codexStreamlinedLogin` flag from browser
+  sign-in requests and keeps device code as the separate fallback path.
+- The WORBI left explorer width was moved to another fresh persisted key
+  (`left-width-v3`) so test WSL installs drop the oversized width from the bad
+  build while preserving resizing.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -49,6 +60,8 @@ Related UI regression:
 - `0.2.5` makes saved Codex provider state win even before the local form state
   catches up, and moves the WORBI left explorer width to a fresh persisted key
   so a bad saved width from `0.2.4` does not carry forward.
+- `0.2.6` keeps the Codex settings inside the LLM provider branch, with API-only
+  sampling controls outside that branch.
 
 ## Passing Checks
 
@@ -60,6 +73,20 @@ Related UI regression:
 
 Focused server result after `0.2.4`: 2 test files, 30 tests passed.
 Focused server result after `0.2.5`: 2 test files, 31 tests passed.
+Focused server result after `0.2.6`: 2 test files, 31 tests passed.
+
+## Root Workspace Vitest Startup Failure
+
+Running the focused tests from `app/` with root `npm test` hit a config startup
+failure before tests executed:
+
+```text
+Error [ERR_REQUIRE_ESM]: require() of ES Module .../vite/dist/node/index.js
+from .../vitest/dist/config.cjs not supported.
+```
+
+Running the same focused tests from `app/server` passed. This looks like root
+workspace Vitest/Vite config drift, not a Codex sign-in failure.
 
 ## Unrelated Unit Failures
 
