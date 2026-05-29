@@ -3,6 +3,7 @@ import {
   cancelCodexLogin,
   getCodexLoginStatus,
   getCodexStatus,
+  openCodexLoginSession,
   openExternalUrl,
   readCodexAccount,
   startCodexLogin,
@@ -31,9 +32,7 @@ router.post('/login/start', async (req, res) => {
     const result = await startCodexLogin(method);
     let externalOpen = null;
     if (shouldOpenExternal) {
-      const loginUrl = result.loginId
-        ? `${req.protocol}://${req.get('host') || '127.0.0.1:8083'}/api/codex/login/${encodeURIComponent(result.loginId)}/redirect`
-        : result.authUrl || result.verificationUrl;
+      const loginUrl = result.authUrl || result.verificationUrl;
       if (loginUrl) {
         try {
           externalOpen = await openExternalUrl(loginUrl);
@@ -61,8 +60,10 @@ router.get('/login/:loginId', async (req, res) => {
 
 router.post('/login/:loginId/open', async (req, res) => {
   try {
-    const loginUrl = `${req.protocol}://${req.get('host') || '127.0.0.1:8083'}/api/codex/login/${encodeURIComponent(req.params.loginId)}/redirect`;
-    const result = await openExternalUrl(loginUrl);
+    const result = await openCodexLoginSession(req.params.loginId);
+    if (!result) {
+      return res.status(404).json({ error: 'Codex sign-in session not found.' });
+    }
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 500).json({ error: error.message });

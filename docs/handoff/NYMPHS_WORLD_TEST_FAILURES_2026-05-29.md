@@ -69,6 +69,28 @@ Follow-up repair in `0.2.7`:
     `state`, `code_challenge`, and `scope` present.
   - The Nymphs World public redirect route returned `302` to `auth.openai.com`.
 
+Follow-up repair in `0.2.8`:
+
+- User confirmed the browser sign-in worked before today's browser-handoff
+  changes.
+- Removed the `0.2.7` local redirect layer and restored direct opening of the
+  Codex app-server returned `authUrl` through PowerShell:
+  `Start-Process -FilePath $args[0]`.
+- Kept the official app-server login request as `{ "type": "chatgpt" }`.
+- Reverted the left explorer persisted-width key from `left-width-v3` back to
+  the prior WORBI `left-width-v2` key. The v3 reset caused test installs to
+  land on the wrong sidebar width behavior.
+- Dev WSL logout/sign-in check:
+  - `codex logout` succeeded outside the sandbox.
+  - Nymphs World `startCodexLogin("browser")` returned a pending login with an
+    `auth.openai.com/oauth/authorize` URL containing `client_id`,
+    `redirect_uri`, `response_type`, `state`, `code_challenge`, `scope`, and
+    related Codex fields.
+  - Nymphs World opened the URL through PowerShell default browser.
+  - No callback returned in this environment before timeout, so the attempt was
+    cancelled. This verified generated URL shape and launcher, not user-side
+    browser completion.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -93,6 +115,7 @@ Focused server result after `0.2.4`: 2 test files, 30 tests passed.
 Focused server result after `0.2.5`: 2 test files, 31 tests passed.
 Focused server result after `0.2.6`: 2 test files, 31 tests passed.
 Focused server result after `0.2.7`: 2 test files, 31 tests passed.
+Focused server result after `0.2.8`: 2 test files, 31 tests passed.
 
 ## Root Workspace Vitest Startup Failure
 

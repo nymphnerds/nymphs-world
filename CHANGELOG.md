@@ -4,6 +4,30 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.8 - 2026-05-29 Restore Known-Good Codex Browser Open
+
+Changed:
+
+- Restored the direct Codex app-server browser sign-in handoff used by the
+  known-good flow: Nymphs World opens the returned `authUrl` through
+  PowerShell `Start-Process -FilePath $args[0]`.
+- Removed the experimental local redirect route added in `0.2.7`.
+- Kept the official app-server login request as `{ "type": "chatgpt" }`.
+- Reverted the WORBI left explorer persisted-width key back to the existing
+  `left-width-v2` key so the sidebar uses the prior resizable/default behavior
+  instead of a new oversized saved value.
+
+Verified:
+
+- Logged this dev WSL out of Codex and started the Nymphs World browser login
+  path; the module generated an `auth.openai.com/oauth/authorize` URL with the
+  required OAuth query fields present and opened it through PowerShell. The
+  attempt was cancelled after no browser callback returned in this environment.
+- Client typecheck passed.
+- Client production build passed.
+- Server Codex route/service/index syntax checks passed.
+- Focused Codex/LLM server tests passed: 31 tests.
+
 ## 0.2.7 - 2026-05-29 WSL Codex Browser Handoff Repair
 
 Changed:

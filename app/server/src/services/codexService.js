@@ -165,18 +165,8 @@ function getBrowserLaunchers(url) {
   if (process.platform === 'win32' || process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
     return [
       {
-        command: 'explorer.exe',
-        args: [url],
-        label: 'Windows URL handler',
-      },
-      {
         command: 'powershell.exe',
-        args: [
-          '-NoProfile',
-          '-Command',
-          '& { param([string] $url) Start-Process -FilePath $url }',
-          url,
-        ],
+        args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
         label: 'PowerShell default browser',
       },
     ];
@@ -648,7 +638,7 @@ function getCodexLoginStatus(loginId) {
   return serializeLoginSession(loginSessions.get(loginId));
 }
 
-function getCodexLoginUrl(loginId) {
+async function openCodexLoginSession(loginId) {
   const session = loginSessions.get(loginId);
   if (!session) return null;
   const loginUrl = session.response?.authUrl || session.response?.verificationUrl;
@@ -657,12 +647,6 @@ function getCodexLoginUrl(loginId) {
     err.statusCode = 404;
     throw err;
   }
-  return loginUrl;
-}
-
-async function openCodexLoginSession(loginId) {
-  const loginUrl = getCodexLoginUrl(loginId);
-  if (!loginUrl) return null;
   return openExternalUrl(loginUrl);
 }
 
@@ -688,7 +672,6 @@ async function cancelCodexLogin(loginId) {
 export {
   cancelCodexLogin,
   fetchCodexModels,
-  getCodexLoginUrl,
   getCodexLoginStatus,
   getCodexStatus,
   openCodexLoginSession,
