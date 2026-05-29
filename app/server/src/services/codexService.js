@@ -648,7 +648,7 @@ function getCodexLoginStatus(loginId) {
   return serializeLoginSession(loginSessions.get(loginId));
 }
 
-async function openCodexLoginSession(loginId) {
+function getCodexLoginUrl(loginId) {
   const session = loginSessions.get(loginId);
   if (!session) return null;
   const loginUrl = session.response?.authUrl || session.response?.verificationUrl;
@@ -657,6 +657,12 @@ async function openCodexLoginSession(loginId) {
     err.statusCode = 404;
     throw err;
   }
+  return loginUrl;
+}
+
+async function openCodexLoginSession(loginId) {
+  const loginUrl = getCodexLoginUrl(loginId);
+  if (!loginUrl) return null;
   return openExternalUrl(loginUrl);
 }
 
@@ -682,6 +688,7 @@ async function cancelCodexLogin(loginId) {
 export {
   cancelCodexLogin,
   fetchCodexModels,
+  getCodexLoginUrl,
   getCodexLoginStatus,
   getCodexStatus,
   openCodexLoginSession,

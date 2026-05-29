@@ -1,6 +1,6 @@
 {
   "name": "nymphs-world-client",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "description": "Nymphs World WORBI-derived React + TypeScript client",
   "type": "module",

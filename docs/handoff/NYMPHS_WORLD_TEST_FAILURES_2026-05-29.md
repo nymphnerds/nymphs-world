@@ -51,6 +51,24 @@ Follow-up repair in `0.2.6`:
   (`left-width-v3`) so test WSL installs drop the oversized width from the bad
   build while preserving resizing.
 
+Follow-up repair in `0.2.7`:
+
+- The official Codex app-server auth sequence is still unchanged:
+  `account/login/start` with `{ "type": "chatgpt" }`, then open the returned
+  `authUrl`, then wait for `account/login/completed`.
+- To protect that official `authUrl` from WSL/Windows process argument
+  mangling, the external browser now opens a short local Nymphs World redirect
+  URL. The server responds with `302` to the exact app-server `authUrl`.
+- This makes the browser handoff boring: no long OpenAI OAuth query string is
+  passed through `explorer.exe` or PowerShell directly.
+- Dev WSL checks after the change:
+  - Nymphs World completed browser sign-in without opening a browser because
+    ChatGPT login is already active in this dev WSL.
+  - A raw Codex app-server browser login generated an `auth.openai.com`
+    `/oauth/authorize` URL with `client_id`, `redirect_uri`, `response_type`,
+    `state`, `code_challenge`, and `scope` present.
+  - The Nymphs World public redirect route returned `302` to `auth.openai.com`.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -74,6 +92,7 @@ Related UI regression:
 Focused server result after `0.2.4`: 2 test files, 30 tests passed.
 Focused server result after `0.2.5`: 2 test files, 31 tests passed.
 Focused server result after `0.2.6`: 2 test files, 31 tests passed.
+Focused server result after `0.2.7`: 2 test files, 31 tests passed.
 
 ## Root Workspace Vitest Startup Failure
 

@@ -4,6 +4,31 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.7 - 2026-05-29 WSL Codex Browser Handoff Repair
+
+Changed:
+
+- Kept the official Codex app-server browser flow: Nymphs World starts
+  `account/login/start` with `{ "type": "chatgpt" }` and waits for
+  `account/login/completed`.
+- Changed only the WSL/browser handoff path: the app now opens a short local
+  Nymphs World redirect URL, which redirects the browser to the official
+  Codex `authUrl`. This avoids Windows/WSL process argument handling mangling
+  the long OAuth query string before it reaches OpenAI.
+
+Verified:
+
+- Dev WSL Codex status check completed without browser because ChatGPT login is
+  already active.
+- Raw Codex app-server browser login generated an `auth.openai.com` URL with
+  required OAuth fields present.
+- Nymphs World local redirect route returned `302` to the Codex/OpenAI auth
+  host.
+- Client typecheck passed.
+- Client production build passed.
+- Server Codex route/service/index syntax checks passed.
+- Focused Codex/LLM server tests passed: 31 tests.
+
 ## 0.2.6 - 2026-05-29 Codex Sign-In Contract Repair
 
 Changed:

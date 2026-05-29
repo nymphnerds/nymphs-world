@@ -21,6 +21,7 @@ import conversationRoutes from './routes/conversations.js';
 import graphRoutes from './routes/graph.js';
 import reminderRoutes from './routes/reminders.js';
 import codexRoutes from './routes/codex.js';
+import codexPublicRoutes from './routes/codexPublic.js';
 import adminRoutes from './routes/admin-maintenance.js';
 import maintenanceRoutes from './routes/maintenance.js';
 import requireAdmin from './middleware/requireAdmin.js';
@@ -48,6 +49,7 @@ for (const dir of dirs) {
 
 // Public routes (no auth required)
 app.use('/api/auth', authRoutes);
+app.use('/api/codex', codexPublicRoutes);
 
 // Image proxy routes (public /proxy, auth per-route for /sign and /sign-batch)
 app.use('/api/images', imageRoutes);
