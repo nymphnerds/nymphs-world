@@ -165,8 +165,18 @@ function getBrowserLaunchers(url) {
   if (process.platform === 'win32' || process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
     return [
       {
+        command: 'explorer.exe',
+        args: [url],
+        label: 'Windows URL handler',
+      },
+      {
         command: 'powershell.exe',
-        args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
+        args: [
+          '-NoProfile',
+          '-Command',
+          '& { param([string] $url) Start-Process -FilePath $url }',
+          url,
+        ],
         label: 'PowerShell default browser',
       },
     ];
@@ -269,7 +279,7 @@ function pickCodexModel(models, requestedModel) {
 
 function normalizeLoginMethod(method) {
   if (method === 'browser' || method === 'chatgpt') {
-    return { type: 'chatgpt' };
+    return { type: 'chatgpt', codexStreamlinedLogin: true };
   }
   return { type: 'chatgptDeviceCode' };
 }

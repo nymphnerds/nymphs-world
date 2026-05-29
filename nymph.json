@@ -3,7 +3,7 @@
   "id": "nymphs-world",
   "name": "Nymphs World",
   "short_name": "NW",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Private development build of Nymphs World using the current WORBI workspace as its UI and app base.",
   "category": "tool",
   "kind": "worldbuilding",

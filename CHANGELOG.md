@@ -4,6 +4,23 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.9 - 2026-05-29 Restore Generated Codex SDK Browser Login Shape
+
+Changed:
+
+- Restored the generated Codex app-server SDK browser login shape used by the
+  last working path: `{ "type": "chatgpt", "codexStreamlinedLogin": true }`.
+- Restored the WSL/Windows browser launcher order to open OAuth URLs through
+  `explorer.exe` first, with PowerShell only as a fallback.
+- Kept `cmd.exe start` out of the OAuth path.
+
+Verified:
+
+- Client typecheck passed.
+- Client production build passed.
+- Server Codex route/service syntax checks passed.
+- Focused Codex/LLM server tests passed: 31 tests.
+
 ## 0.2.8 - 2026-05-29 Restore Known-Good Codex Browser Open
 
 Changed:

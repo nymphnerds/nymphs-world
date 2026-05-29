@@ -91,6 +91,14 @@ Follow-up repair in `0.2.8`:
     cancelled. This verified generated URL shape and launcher, not user-side
     browser completion.
 
+Follow-up repair in `0.2.9`:
+
+- Restored the generated Codex app-server SDK browser login shape:
+  `{ "type": "chatgpt", "codexStreamlinedLogin": true }`.
+- Restored the WSL/Windows browser launcher order from the last working path:
+  `explorer.exe` opens the returned `authUrl` first, with PowerShell fallback.
+- Kept `cmd.exe start` out of the OAuth launch path.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -116,6 +124,7 @@ Focused server result after `0.2.5`: 2 test files, 31 tests passed.
 Focused server result after `0.2.6`: 2 test files, 31 tests passed.
 Focused server result after `0.2.7`: 2 test files, 31 tests passed.
 Focused server result after `0.2.8`: 2 test files, 31 tests passed.
+Focused server result after `0.2.9`: 2 test files, 31 tests passed.
 
 ## Root Workspace Vitest Startup Failure
 

@@ -64,43 +64,46 @@ describe('codexService', () => {
     await expect(startCodexLogin('device-code')).rejects.toThrow(/app-server is not available/);
   });
 
-  it('opens WSL browser login through PowerShell using one URL argument', async () => {
+  it('opens WSL browser login through the Windows URL handler so OAuth query params stay intact', async () => {
     process.env.WSL_DISTRO_NAME = 'NymphsCore_Lite';
     const child = new EventEmitter() as EventEmitter & { unref: ReturnType<typeof vi.fn> };
     child.unref = vi.fn();
     mockSpawn.mockImplementationOnce(((command: string, args: string[]) => {
-      expect(command).toBe('powershell.exe');
-      expect(args).toEqual([
-        '-NoProfile',
-        '-Command',
-        'Start-Process -FilePath $args[0]',
-        'https://auth.openai.com/oauth?client_id=test&state=abc',
-      ]);
+      expect(command).toBe('explorer.exe');
+      expect(args).toEqual(['https://auth.openai.com/oauth?client_id=test&state=abc']);
       queueMicrotask(() => child.emit('spawn'));
       return child;
     }) as any);
 
     const result = await openExternalUrl('https://auth.openai.com/oauth?client_id=test&state=abc');
 
-    expect(result).toEqual({ opened: true, via: 'PowerShell default browser' });
+    expect(result).toEqual({ opened: true, via: 'Windows URL handler' });
   });
 
-  it('does not route WSL OAuth URLs through cmd.exe', async () => {
+  it('falls back to PowerShell without routing OAuth URLs through cmd.exe', async () => {
     process.env.WSL_DISTRO_NAME = 'NymphsCore_Lite';
+    const failedChild = new EventEmitter() as EventEmitter & { unref: ReturnType<typeof vi.fn> };
+    failedChild.unref = vi.fn();
     const child = new EventEmitter() as EventEmitter & { unref: ReturnType<typeof vi.fn> };
     child.unref = vi.fn();
 
-    mockSpawn.mockImplementationOnce(((command: string, args: string[]) => {
-      expect(command).toBe('powershell.exe');
-      expect(args).toEqual([
-        '-NoProfile',
-        '-Command',
-        'Start-Process -FilePath $args[0]',
-        'https://auth.openai.com/oauth?client_id=test&scope=a%20b&state=abc',
-      ]);
-      queueMicrotask(() => child.emit('spawn'));
-      return child;
-    }) as any);
+    mockSpawn
+      .mockImplementationOnce(((command: string) => {
+        expect(command).toBe('explorer.exe');
+        queueMicrotask(() => failedChild.emit('error', new Error('not available')));
+        return failedChild;
+      }) as any)
+      .mockImplementationOnce(((command: string, args: string[]) => {
+        expect(command).toBe('powershell.exe');
+        expect(args).toEqual([
+          '-NoProfile',
+          '-Command',
+          '& { param([string] $url) Start-Process -FilePath $url }',
+          'https://auth.openai.com/oauth?client_id=test&scope=a%20b&state=abc',
+        ]);
+        queueMicrotask(() => child.emit('spawn'));
+        return child;
+      }) as any);
 
     const result = await openExternalUrl('https://auth.openai.com/oauth?client_id=test&scope=a%20b&state=abc');
 
