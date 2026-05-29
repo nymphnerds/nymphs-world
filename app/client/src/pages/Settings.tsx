@@ -253,7 +253,8 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   // Debounced auto-save when API key changes (1s delay after user stops typing)
   useEffect(() => {
     if (!initialSyncDone.current) return; // Skip until initial sync completes
-    if (formProviderId === 'codex') return;
+    const providerIdToSave = formProviderId || settings.providerId || (settings.codex?.enabled ? 'codex' : '');
+    if (providerIdToSave === 'codex') return;
 
     // Clear any existing timer
     if (apiKeySaveTimer.current) {
@@ -267,10 +268,10 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
         ...settings,
         apiKey: formApiKey,
         baseUrl: formBaseUrl,
-        providerId: formProviderId,
+        providerId: providerIdToSave,
       });
     }, 1000);
-  }, [formApiKey, formProviderId]);
+  }, [formApiKey, formProviderId, settings.providerId, settings.codex?.enabled]);
 
   const handleMaxTabsChange = useCallback((val: number) => {
     const clamped = Math.max(1, Math.min(50, val));
@@ -279,20 +280,21 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   }, []);
 
   const handleSave = useCallback(async () => {
+    const providerIdToSave = formProviderId || settings.providerId || (settings.codex?.enabled ? 'codex' : '');
     // Build merged settings with current form values to avoid stale closure
     const merged = {
       ...settings,
-      providerId: formProviderId,
+      providerId: providerIdToSave,
       baseUrl: formBaseUrl,
       apiKey: formApiKey,
       modelName: formModelName,
       codex: {
         ...settings.codex,
-        enabled: formProviderId === 'codex',
-        loginMethod: 'browser' as const,
+        enabled: providerIdToSave === 'codex',
+        loginMethod: providerIdToSave === 'codex' ? 'browser' as const : settings.codex?.loginMethod || 'browser' as const,
         reasoningEffort: settings.codex?.reasoningEffort || 'medium',
       },
-      serverType: formProviderId === 'ollama' ? 'ollama' : '',
+      serverType: providerIdToSave === 'ollama' ? 'ollama' : '',
     };
     // Commit form values to settings state
     updateSettings(merged);
@@ -451,23 +453,24 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
 
   const handleTestConnection = useCallback(async () => {
     setTestError(null);
-    if (formProviderId === 'codex') {
+    const providerIdToTest = formProviderId || settings.providerId || (settings.codex?.enabled ? 'codex' : '');
+    if (providerIdToTest === 'codex') {
       await handleRefreshCodexStatus();
       return;
     }
 
     updateSettings({
-      providerId: formProviderId,
+      providerId: providerIdToTest,
       baseUrl: formBaseUrl,
       apiKey: formApiKey,
-      serverType: formProviderId === 'ollama' ? 'ollama' : '',
+      serverType: providerIdToTest === 'ollama' ? 'ollama' : '',
     });
     await testConn();
     // After test, load models if success
     if (connectionStatus === 'connected' || formBaseUrl) {
-      loadModels(formBaseUrl, formApiKey, formProviderId === 'ollama' ? 'ollama' : '');
+      loadModels(formBaseUrl, formApiKey, providerIdToTest === 'ollama' ? 'ollama' : '');
     }
-  }, [formProviderId, formBaseUrl, formApiKey, testConn, loadModels, connectionStatus, updateSettings, handleRefreshCodexStatus]);
+  }, [formProviderId, formBaseUrl, formApiKey, settings.providerId, settings.codex?.enabled, testConn, loadModels, connectionStatus, updateSettings, handleRefreshCodexStatus]);
 
   const handleRefreshModels = useCallback(async () => {
     loadModels(formBaseUrl, formApiKey, formProviderId === 'ollama' ? 'ollama' : '');
@@ -497,11 +500,14 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   const otherPresets = PROVIDER_PRESETS.filter((p) => p.group === 'other');
 
   // Check if selected provider requires API key
-  const selectedPreset = PROVIDER_PRESETS.find((p) => p.id === formProviderId);
+  const settingsProviderId = settings.providerId || (settings.codex?.enabled ? 'codex' : '');
+  const effectiveProviderId = formProviderId || settingsProviderId;
+  const selectedPreset = PROVIDER_PRESETS.find((p) => p.id === effectiveProviderId);
   const requiresApiKey = selectedPreset?.requiresApiKey || false;
-  const providerWarning = formProviderId === 'codex' ? null : selectedPreset?.warning;
-  const isCodexProvider = formProviderId === 'codex';
-  const codexLoginDisabled = codexLoading || codexStatus?.appServerDaemon.available === false;
+  const providerWarning = effectiveProviderId === 'codex' ? null : selectedPreset?.warning;
+  const isCodexProvider = effectiveProviderId === 'codex';
+  const codexConnected = Boolean(codexProbe?.account);
+  const codexLoginDisabled = codexLoading || codexConnected || codexStatus?.appServerDaemon.available === false;
   const selectedCodexModel = codexProbe?.models?.find((model) => model.id === formModelName || model.model === formModelName) || null;
   const codexReasoning = formCodexReasoning || settings.codex?.reasoningEffort || selectedCodexModel?.defaultReasoningEffort || 'medium';
   const codexReasoningChoices = codexReasoningOptions(selectedCodexModel, codexReasoning);
@@ -586,7 +592,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
               <div>
                 <label className="block text-xs font-medium mb-1.5 uppercase tracking-wider">Provider</label>
                 <select
-                  value={formProviderId}
+                  value={effectiveProviderId}
                   onChange={(e) => handleProviderChange(e.target.value)}
                   className={`${selectClass} w-full`}
                 >
@@ -665,7 +671,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
 
                     {codexLogin?.status === 'completed' && (
                       <div className="rounded-md border border-green-500/20 bg-green-500/10 px-3 py-2 text-xs text-green-400">
-                        Signed in. Run Check to refresh models.
+                        Signed in.
                       </div>
                     )}
 
@@ -681,7 +687,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                       className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-colors hover:brightness-110 disabled:opacity-50"
                     >
                       <ExternalLink size={13} />
-                      {codexLoading ? 'Opening...' : 'Sign In'}
+                      {codexConnected ? 'Signed In' : codexLoading ? 'Opening...' : 'Sign In'}
                     </button>
                   </div>
 

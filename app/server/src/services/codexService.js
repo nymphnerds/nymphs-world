@@ -163,22 +163,21 @@ function validateBrowserUrl(url) {
 
 function getBrowserLaunchers(url) {
   if (process.platform === 'win32' || process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
-    const cmdSafeUrl = `"${url.replace(/"/g, '')}"`;
     return [
-      {
-        command: 'powershell.exe',
-        args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
-        label: 'PowerShell default browser',
-      },
       {
         command: 'explorer.exe',
         args: [url],
         label: 'Windows URL handler',
       },
       {
-        command: 'cmd.exe',
-        args: ['/c', 'start', '""', cmdSafeUrl],
-        label: 'Windows default browser',
+        command: 'powershell.exe',
+        args: [
+          '-NoProfile',
+          '-Command',
+          '& { param([string] $url) Start-Process -FilePath $url }',
+          url,
+        ],
+        label: 'PowerShell default browser',
       },
     ];
   }
@@ -280,7 +279,7 @@ function pickCodexModel(models, requestedModel) {
 
 function normalizeLoginMethod(method) {
   if (method === 'browser' || method === 'chatgpt') {
-    return { type: 'chatgpt' };
+    return { type: 'chatgpt', codexStreamlinedLogin: true };
   }
   return { type: 'chatgptDeviceCode' };
 }
@@ -550,6 +549,29 @@ async function startCodexLogin(method = 'device-code') {
     err.statusCode = 501;
     err.details = status;
     throw err;
+  }
+
+  if (status.loggedIn && method !== 'device-code') {
+    try {
+      const probe = await readCodexAccount();
+      if (probe?.account) {
+        return {
+          type: 'chatgpt',
+          loginId: null,
+          method: 'browser',
+          status: 'completed',
+          success: true,
+          error: null,
+          startedAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          authUrl: null,
+          verificationUrl: null,
+          userCode: null,
+        };
+      }
+    } catch {
+      // Fall through to the normal app-server login flow when account probing fails.
+    }
   }
 
   const client = new CodexAppServerClient();

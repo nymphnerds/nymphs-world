@@ -27,12 +27,28 @@ Repair in `0.2.4`:
 - A focused unit test now verifies that WSL OAuth URLs are passed through
   PowerShell intact.
 
+Follow-up repair in `0.2.5`:
+
+- Testing was happening in a separate test WSL, not this development WSL.
+- Local probing in the development WSL showed the Codex app-server returned an
+  auth URL with the required OAuth fields (`client_id`, `redirect_uri`,
+  `response_type`, `state`, `code_challenge`, and `scope`).
+- The module now opens WSL/Windows OAuth URLs through `explorer.exe` first and
+  removes the `cmd.exe start` fallback entirely.
+- Browser login requests now include the app-server `codexStreamlinedLogin`
+  flag from the generated Codex SDK shape.
+- If Codex is already logged in and `account/read` succeeds, the sign-in action
+  now returns completed instead of opening another OAuth page.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
   could stay on API controls until `Codex Sign In` was reselected.
 - `0.2.4` makes saved Codex provider state force the Codex UI immediately and
   keeps API-only sampling controls hidden on that path.
+- `0.2.5` makes saved Codex provider state win even before the local form state
+  catches up, and moves the WORBI left explorer width to a fresh persisted key
+  so a bad saved width from `0.2.4` does not carry forward.
 
 ## Passing Checks
 
@@ -43,6 +59,7 @@ Related UI regression:
 - `app/server`: `npm test -- tests/unit/services/codexService.test.ts tests/unit/services/llmService.test.ts`
 
 Focused server result after `0.2.4`: 2 test files, 30 tests passed.
+Focused server result after `0.2.5`: 2 test files, 31 tests passed.
 
 ## Unrelated Unit Failures
 

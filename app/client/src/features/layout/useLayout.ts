@@ -7,41 +7,24 @@ type HideableIcon = ActivityType | 'ai';
 const MIN_LEFT_WIDTH = 180;
 const MAX_LEFT_WIDTH = 500;
 const DEFAULT_LEFT_WIDTH = 250;
-const BROKEN_SETTINGS_WIDTH_THRESHOLD = 420;
-const LEFT_WIDTH_REPAIR_MARKER = 'left-width-repaired-0.2.4';
+const LEFT_WIDTH_KEY = 'left-width-v2';
 const MIN_RIGHT_WIDTH = 280;
 const MAX_RIGHT_WIDTH = 600;
 const MIN_SEARCH_WIDTH = 200;
 const MAX_SEARCH_WIDTH = 500;
 
-function readWidth(
-  key: string,
-  fallback: number,
-  min: number,
-  max: number,
-  repairMarkerKey?: string,
-) {
+function readWidth(key: string, fallback: number, min: number, max: number) {
   const stored = localStorage.getItem(key);
   const parsed = stored ? parseInt(stored, 10) : NaN;
   if (!Number.isFinite(parsed)) return fallback;
-  if (
-    repairMarkerKey &&
-    parsed >= BROKEN_SETTINGS_WIDTH_THRESHOLD &&
-    localStorage.getItem(repairMarkerKey) !== 'true'
-  ) {
-    localStorage.setItem(key, String(fallback));
-    localStorage.setItem(repairMarkerKey, 'true');
-    return fallback;
-  }
   return Math.max(min, Math.min(max, parsed));
 }
 
 export function useLayout() {
   const { user } = useAuthContext();
   const prefix = user ? `wbu_${user.username}_` : 'wbu_';
-  const leftWidthRepairKey = `${prefix}${LEFT_WIDTH_REPAIR_MARKER}`;
   const [leftWidth, setLeftWidth] = useState(() => {
-    return readWidth(`${prefix}left-width`, DEFAULT_LEFT_WIDTH, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH, leftWidthRepairKey);
+    return readWidth(`${prefix}${LEFT_WIDTH_KEY}`, DEFAULT_LEFT_WIDTH, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH);
   });
   const [rightWidth, setRightWidth] = useState(() => {
     return readWidth(`${prefix}right-width`, 350, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH);
@@ -82,8 +65,7 @@ export function useLayout() {
   }, [prefix]);
 
   useEffect(() => {
-    const repairKey = `${prefix}${LEFT_WIDTH_REPAIR_MARKER}`;
-    setLeftWidth(readWidth(`${prefix}left-width`, DEFAULT_LEFT_WIDTH, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH, repairKey));
+    setLeftWidth(readWidth(`${prefix}${LEFT_WIDTH_KEY}`, DEFAULT_LEFT_WIDTH, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH));
     setRightWidth(readWidth(`${prefix}right-width`, 350, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH));
     setSearchWidth(readWidth(`${prefix}search-width`, 250, MIN_SEARCH_WIDTH, MAX_SEARCH_WIDTH));
   }, [prefix]);
@@ -151,7 +133,7 @@ export function useLayout() {
         () => leftWidth,
         MIN_LEFT_WIDTH,
         MAX_LEFT_WIDTH,
-        `${prefix}left-width`,
+        `${prefix}${LEFT_WIDTH_KEY}`,
         false,
       )(e);
     },

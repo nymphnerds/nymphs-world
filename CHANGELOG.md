@@ -4,6 +4,29 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.5 - 2026-05-29 Test WSL Codex and Layout Repair
+
+Changed:
+
+- Reset the WORBI left explorer width onto a fresh persisted key so bad
+  `0.2.4` localStorage width values do not carry into the test WSL install.
+- Kept the explorer resizable with the WORBI width bounds.
+- Changed WSL/Windows Codex sign-in opening to use `explorer.exe` first and
+  removed the `cmd.exe start` OAuth fallback entirely.
+- Marked browser Codex login requests with the app-server streamlined login
+  flag from the generated Codex SDK shape.
+- If Codex is already logged in and the app-server account probe succeeds,
+  `Sign In` now resolves as already completed instead of opening a fresh,
+  failure-prone OAuth page.
+- Made the saved Codex provider win even when the settings form has not
+  hydrated yet, so API sampling controls do not flash/stick on the Codex path.
+
+Verified:
+
+- Client typecheck passed.
+- Server Codex route/service syntax checks passed.
+- Focused Codex/LLM server tests passed: 31 tests.
+
 ## 0.2.4 - 2026-05-29 Codex Sign-In Regression Repair
 
 Changed:
