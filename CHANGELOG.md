@@ -4,6 +4,27 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.4 - 2026-05-29 Codex Sign-In Regression Repair
+
+Changed:
+
+- Fixed the WSL/Windows browser launcher for Codex sign-in by opening OAuth
+  URLs through PowerShell first, so query parameters are not truncated by
+  `cmd.exe start`.
+- Kept Codex in the LLM provider section and made saved Codex settings hydrate
+  the UI immediately, without needing to reselect `Codex Sign In`.
+- Kept API-only sampling controls hidden when Codex is selected.
+- Made Codex reasoning power update from local form state immediately.
+- Restored the WORBI sidebar width as a one-time repair for oversized saved
+  settings while preserving normal resizing afterward.
+
+Verified:
+
+- Client typecheck passed.
+- Client production build passed.
+- Server Codex route/service syntax checks passed.
+- Focused Codex/LLM server tests passed: 30 tests.
+
 ## 0.2.3 - 2026-05-29 Codex LLM Layout Repair
 
 Changed:

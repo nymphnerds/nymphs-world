@@ -4,15 +4,45 @@ This note records unrelated failures seen while verifying the Codex settings
 work. The focused Codex and LLM checks passed; the items below need their own
 cleanup pass.
 
+## Codex Sign-In Regression Caught Later
+
+After `0.2.3`, browser sign-in could open an OpenAI auth error page with:
+
+```text
+Authentication Error
+error_code: missing_required_parameter
+```
+
+Likely cause:
+
+- The WSL browser opener tried `cmd.exe /c start` first.
+- OAuth URLs contain `&` query parameters, and `cmd.exe start` can treat those
+  as command separators unless the URL is protected.
+- Result: OpenAI received a truncated authorization URL.
+
+Repair in `0.2.4`:
+
+- WSL/Windows browser opening now tries PowerShell `Start-Process` first.
+- The `cmd.exe` fallback quotes the URL.
+- A focused unit test now verifies that WSL OAuth URLs are passed through
+  PowerShell intact.
+
+Related UI regression:
+
+- Saved Codex settings did not always hydrate the LLM settings form, so the UI
+  could stay on API controls until `Codex Sign In` was reselected.
+- `0.2.4` makes saved Codex provider state force the Codex UI immediately and
+  keeps API-only sampling controls hidden on that path.
+
 ## Passing Checks
 
 - `app/client`: `npm run test:typecheck`
 - `app/client`: `npm run build`
 - `app/server`: `node --check src/services/codexService.js`
-- `app/server`: `node --check src/config.js`
+- `app/server`: `node --check src/routes/codex.js`
 - `app/server`: `npm test -- tests/unit/services/codexService.test.ts tests/unit/services/llmService.test.ts`
 
-Focused server result: 2 test files, 29 tests passed.
+Focused server result after `0.2.4`: 2 test files, 30 tests passed.
 
 ## Unrelated Unit Failures
 

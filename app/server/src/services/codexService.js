@@ -163,11 +163,12 @@ function validateBrowserUrl(url) {
 
 function getBrowserLaunchers(url) {
   if (process.platform === 'win32' || process.env.WSL_DISTRO_NAME || process.env.WSL_INTEROP) {
+    const cmdSafeUrl = `"${url.replace(/"/g, '')}"`;
     return [
       {
-        command: 'cmd.exe',
-        args: ['/c', 'start', '', url],
-        label: 'Windows default browser',
+        command: 'powershell.exe',
+        args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
+        label: 'PowerShell default browser',
       },
       {
         command: 'explorer.exe',
@@ -175,9 +176,9 @@ function getBrowserLaunchers(url) {
         label: 'Windows URL handler',
       },
       {
-        command: 'powershell.exe',
-        args: ['-NoProfile', '-Command', 'Start-Process -FilePath $args[0]', url],
-        label: 'PowerShell default browser',
+        command: 'cmd.exe',
+        args: ['/c', 'start', '""', cmdSafeUrl],
+        label: 'Windows default browser',
       },
     ];
   }

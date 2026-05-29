@@ -83,11 +83,17 @@ Implemented in source:
   persist a selected Codex model
 - `/api/settings/test` verifies Codex through account/model probe, not just CLI
   presence
-- Settings exposes browser sign-in and device-code sign-in. Browser sign-in
-  asks the backend to open the returned auth URL through the OS default browser,
-  avoiding WebView popup windows. The UI keeps an open/copy fallback visible
-  while pending; device-code sign-in shows the user code plus open/copy actions.
-  Both paths poll `account/login/completed`.
+- Settings exposes `Codex Sign In` inside the LLM provider section, with one
+  primary `Sign In` action. Browser sign-in asks the backend to open the
+  returned auth URL through the OS default browser, avoiding WebView popup
+  windows. The backend keeps device-code support available, but the UI should
+  stay simple unless fallback UX is intentionally redesigned.
+- In WSL/Windows, browser sign-in must open OAuth URLs through PowerShell first
+  because `cmd.exe start` can truncate `&` query parameters and produce OpenAI
+  `missing_required_parameter` auth errors.
+- When `Codex Sign In` is selected, API-only controls such as max tokens,
+  context window, temperature, top-p, top-k, frequency penalty, and presence
+  penalty are not Codex controls and should remain hidden.
 
 Current guardrails:
 

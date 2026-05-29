@@ -6,29 +6,52 @@ type HideableIcon = ActivityType | 'ai';
 
 const MIN_LEFT_WIDTH = 180;
 const MAX_LEFT_WIDTH = 500;
+const DEFAULT_LEFT_WIDTH = 250;
+const BROKEN_SETTINGS_WIDTH_THRESHOLD = 420;
+const LEFT_WIDTH_REPAIR_MARKER = 'left-width-repaired-0.2.4';
 const MIN_RIGHT_WIDTH = 280;
 const MAX_RIGHT_WIDTH = 600;
 const MIN_SEARCH_WIDTH = 200;
 const MAX_SEARCH_WIDTH = 500;
 
+function readWidth(
+  key: string,
+  fallback: number,
+  min: number,
+  max: number,
+  repairMarkerKey?: string,
+) {
+  const stored = localStorage.getItem(key);
+  const parsed = stored ? parseInt(stored, 10) : NaN;
+  if (!Number.isFinite(parsed)) return fallback;
+  if (
+    repairMarkerKey &&
+    parsed >= BROKEN_SETTINGS_WIDTH_THRESHOLD &&
+    localStorage.getItem(repairMarkerKey) !== 'true'
+  ) {
+    localStorage.setItem(key, String(fallback));
+    localStorage.setItem(repairMarkerKey, 'true');
+    return fallback;
+  }
+  return Math.max(min, Math.min(max, parsed));
+}
+
 export function useLayout() {
   const { user } = useAuthContext();
   const prefix = user ? `wbu_${user.username}_` : 'wbu_';
+  const leftWidthRepairKey = `${prefix}${LEFT_WIDTH_REPAIR_MARKER}`;
   const [leftWidth, setLeftWidth] = useState(() => {
-    const stored = localStorage.getItem(`${prefix}left-width`);
-    return stored ? parseInt(stored, 10) : 250;
+    return readWidth(`${prefix}left-width`, DEFAULT_LEFT_WIDTH, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH, leftWidthRepairKey);
   });
   const [rightWidth, setRightWidth] = useState(() => {
-    const stored = localStorage.getItem(`${prefix}right-width`);
-    return stored ? parseInt(stored, 10) : 350;
+    return readWidth(`${prefix}right-width`, 350, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH);
   });
   const [leftPanelHidden, setLeftPanelHidden] = useState(() => {
     const stored = localStorage.getItem(`${prefix}left-panel-hidden`);
     return stored !== null ? stored === 'true' : false;
   });
   const [searchWidth, setSearchWidth] = useState(() => {
-    const stored = localStorage.getItem(`${prefix}search-width`);
-    return stored ? parseInt(stored, 10) : 250;
+    return readWidth(`${prefix}search-width`, 250, MIN_SEARCH_WIDTH, MAX_SEARCH_WIDTH);
   });
   const [showAISidebar, setShowAISidebarState] = useState(() => {
     const stored = localStorage.getItem(`${prefix}ai-sidebar`);
@@ -56,6 +79,13 @@ export function useLayout() {
       localStorage.setItem(`${prefix}left-panel-hidden`, String(!prev));
       return !prev;
     });
+  }, [prefix]);
+
+  useEffect(() => {
+    const repairKey = `${prefix}${LEFT_WIDTH_REPAIR_MARKER}`;
+    setLeftWidth(readWidth(`${prefix}left-width`, DEFAULT_LEFT_WIDTH, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH, repairKey));
+    setRightWidth(readWidth(`${prefix}right-width`, 350, MIN_RIGHT_WIDTH, MAX_RIGHT_WIDTH));
+    setSearchWidth(readWidth(`${prefix}search-width`, 250, MIN_SEARCH_WIDTH, MAX_SEARCH_WIDTH));
   }, [prefix]);
 
   /**

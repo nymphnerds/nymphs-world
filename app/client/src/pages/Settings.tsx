@@ -5,7 +5,7 @@ import { getMaxTabs, setMaxTabs } from '../hooks/useFiles';
 import { ThemePicker } from '../components/ThemePicker';
 import { useAuthContext } from '../features/auth/AuthProvider';
 import type { ToolPermissions, ImageGenStatus as ImageGenStatusType, CodexLoginSession, CodexProbe, CodexStatus } from '../services/api';
-import { getImageGenerationStatus, testZImageConnection, saveUserSettings, getCodexLoginStatus, getCodexProbe, getCodexStatus, openCodexLoginSession, startCodexLogin } from '../services/api';
+import { getImageGenerationStatus, testZImageConnection, saveUserSettings, getCodexLoginStatus, getCodexProbe, getCodexStatus, startCodexLogin } from '../services/api';
 
 // Static provider presets for manual selection
 
@@ -82,6 +82,7 @@ const REASONING_LABELS: Record<string, string> = {
   high: 'High',
   xhigh: 'Very High',
 };
+const REASONING_ORDER = ['minimal', 'low', 'medium', 'high', 'xhigh'];
 
 function reasoningLabel(value: string): string {
   return REASONING_LABELS[value] || value.replace(/[-_]/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
@@ -93,7 +94,15 @@ function codexReasoningOptions(model: CodexProbe['models'][number] | null | unde
     .filter((value): value is string => Boolean(value));
   const values = fromModel.length ? fromModel : ['low', 'medium', 'high'];
   const defaultEffort = model?.defaultReasoningEffort || savedEffort;
-  const unique = Array.from(new Set([defaultEffort, savedEffort, ...values].filter(Boolean) as string[]));
+  const unique = Array.from(new Set([defaultEffort, savedEffort, ...values].filter(Boolean) as string[]))
+    .sort((a, b) => {
+      const aIndex = REASONING_ORDER.indexOf(a);
+      const bIndex = REASONING_ORDER.indexOf(b);
+      if (aIndex === -1 && bIndex === -1) return a.localeCompare(b);
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
   return unique.map((value) => ({
     value,
     label: reasoningLabel(value),
@@ -190,6 +199,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   const [formBaseUrl, setFormBaseUrl] = useState(settings.baseUrl);
   const [formApiKey, setFormApiKey] = useState(settings.apiKey);
   const [formModelName, setFormModelName] = useState(settings.modelName);
+  const [formCodexReasoning, setFormCodexReasoning] = useState(settings.codex?.reasoningEffort || 'medium');
   const [testError, setTestError] = useState<string | null>(null);
   const [codexStatus, setCodexStatus] = useState<CodexStatus | null>(null);
   const [codexProbe, setCodexProbe] = useState<CodexProbe | null>(null);
@@ -197,21 +207,39 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   const [codexLoading, setCodexLoading] = useState(false);
   const [codexError, setCodexError] = useState<string | null>(null);
   const initialSyncDone = useRef(false);
+  const formDirty = useRef(false);
   const apiKeySaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync form state only on initial load (when settings arrive from server)
-  // After first sync, do NOT overwrite — preserves user edits in the form
-  // Guard: only sync when settings have actual data (non-empty baseUrl) to avoid
-  // consuming the empty default render before the async server response arrives
+  // Sync form state from server settings once they arrive, and always honor a
+  // saved Codex provider so Codex controls appear without manually reselecting.
   useEffect(() => {
-    if (!initialSyncDone.current && (settings.baseUrl || settings.providerId === 'codex')) {
-      setFormProviderId(settings.providerId);
+    const serverProviderId = settings.providerId || (settings.codex?.enabled ? 'codex' : '');
+    const hasLoadedSettings = Boolean(serverProviderId || settings.baseUrl || settings.modelName || settings.apiKey);
+    if (!hasLoadedSettings) return;
+
+    const shouldSync =
+      !initialSyncDone.current ||
+      (serverProviderId === 'codex' && formProviderId !== 'codex') ||
+      (!formDirty.current && serverProviderId !== formProviderId);
+
+    if (shouldSync) {
+      setFormProviderId(serverProviderId);
       setFormBaseUrl(settings.baseUrl);
       setFormApiKey(settings.apiKey);
       setFormModelName(settings.modelName);
+      setFormCodexReasoning(settings.codex?.reasoningEffort || 'medium');
       initialSyncDone.current = true;
+      formDirty.current = false;
     }
-  }, [settings.providerId, settings.baseUrl, settings.apiKey, settings.modelName]);
+  }, [
+    settings.providerId,
+    settings.codex?.enabled,
+    settings.codex?.reasoningEffort,
+    settings.baseUrl,
+    settings.apiKey,
+    settings.modelName,
+    formProviderId,
+  ]);
 
   // Cleanup debounce timer on unmount
   useEffect(() => {
@@ -270,6 +298,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
     updateSettings(merged);
     // Pass merged settings directly to avoid stale closure
     await saveUserSettings(merged);
+    formDirty.current = false;
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [formProviderId, formBaseUrl, formApiKey, formModelName, settings, updateSettings, saveUserSettings]);
@@ -281,6 +310,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   }, [saveToolPermissions, toolPermissions]);
 
   const handleProviderChange = useCallback((providerId: string) => {
+    formDirty.current = true;
     setFormProviderId(providerId);
 
     // Find the provider in presets
@@ -325,6 +355,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   }, [formModelName, updateSettings]);
 
   const saveCodexSettings = useCallback(async (partialCodex: Partial<NonNullable<typeof settings.codex>> = {}, modelName = formModelName) => {
+    const reasoningEffort = partialCodex.reasoningEffort || formCodexReasoning || settings.codex?.reasoningEffort || 'medium';
     const merged = {
       ...settings,
       providerId: 'codex',
@@ -335,33 +366,19 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
         ...settings.codex,
         enabled: true,
         loginMethod: 'browser' as const,
-        reasoningEffort: settings.codex?.reasoningEffort || 'medium',
+        reasoningEffort,
         ...partialCodex,
       },
     };
+    formDirty.current = false;
     setFormProviderId('codex');
     setFormBaseUrl('');
     setFormApiKey('');
     setFormModelName(modelName);
+    setFormCodexReasoning(reasoningEffort);
     updateSettings(merged);
     await saveUserSettings(merged);
-  }, [formModelName, saveUserSettings, settings, updateSettings]);
-
-  const handleOpenCodexLoginSession = useCallback(async () => {
-    if (!codexLogin?.loginId) return;
-    setCodexLoading(true);
-    setCodexError(null);
-    try {
-      const result = await openCodexLoginSession(codexLogin.loginId);
-      if (!result.opened) {
-        setCodexError(result.error || 'Codex sign-in page could not be opened.');
-      }
-    } catch (err: any) {
-      setCodexError(err.message || 'Codex sign-in page could not be opened.');
-    } finally {
-      setCodexLoading(false);
-    }
-  }, [codexLogin]);
+  }, [formCodexReasoning, formModelName, saveUserSettings, settings, updateSettings]);
 
   const handleStartCodexLogin = useCallback(async (method: 'browser' | 'device-code') => {
     setCodexLoading(true);
@@ -387,14 +404,11 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   }, [handleRefreshCodexStatus, saveCodexSettings]);
 
   const handleCodexSignIn = useCallback(async () => {
-    if (codexLogin?.loginId && codexLogin.status === 'pending') {
-      await handleOpenCodexLoginSession();
-      return;
-    }
     await handleStartCodexLogin('browser');
-  }, [codexLogin?.loginId, codexLogin?.status, handleOpenCodexLoginSession, handleStartCodexLogin]);
+  }, [handleStartCodexLogin]);
 
   const handleCodexReasoningChange = useCallback(async (reasoningEffort: string) => {
+    setFormCodexReasoning(reasoningEffort);
     await saveCodexSettings({ reasoningEffort });
   }, [saveCodexSettings]);
 
@@ -489,7 +503,7 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
   const isCodexProvider = formProviderId === 'codex';
   const codexLoginDisabled = codexLoading || codexStatus?.appServerDaemon.available === false;
   const selectedCodexModel = codexProbe?.models?.find((model) => model.id === formModelName || model.model === formModelName) || null;
-  const codexReasoning = settings.codex?.reasoningEffort || selectedCodexModel?.defaultReasoningEffort || 'medium';
+  const codexReasoning = formCodexReasoning || settings.codex?.reasoningEffort || selectedCodexModel?.defaultReasoningEffort || 'medium';
   const codexReasoningChoices = codexReasoningOptions(selectedCodexModel, codexReasoning);
   const codexAccountLabel = codexStatus?.loggedIn
     ? (codexStatus.loginLabel || 'ChatGPT').replace(/^Logged in using\s+/i, '')
