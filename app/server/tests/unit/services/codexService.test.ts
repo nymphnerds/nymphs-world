@@ -8,7 +8,7 @@ vi.mock('child_process', () => ({
   spawn: vi.fn(),
 }));
 
-import { getCodexStatus, openExternalUrl, startCodexLogin } from '../../../src/services/codexService.js';
+import { getCodexStatus, logoutCodex, openExternalUrl, startCodexLogin } from '../../../src/services/codexService.js';
 
 const mockExecFile = vi.mocked(execFile);
 const mockSpawn = vi.mocked(spawn);
@@ -79,6 +79,22 @@ describe('codexService', () => {
     expect(status.authMode).toBe('chatgpt');
     expect(status.appServerDaemon.available).toBe(true);
     expect(status.warnings).toEqual([]);
+  });
+
+  it('signs out through the Codex CLI logout command', async () => {
+    mockCodexResponse('codex-cli 1.2.3');
+    mockCodexResponse('Signed out');
+
+    const result = await logoutCodex();
+
+    expect(result).toMatchObject({ signedOut: true, message: 'Signed out' });
+    expect(mockExecFile).toHaveBeenNthCalledWith(
+      2,
+      expect.any(String),
+      ['logout'],
+      expect.any(Object),
+      expect.any(Function),
+    );
   });
 
   it('keeps daemon failures visible without hiding active login', async () => {

@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { X, Check, AlertCircle, Settings as SettingsIcon, Zap, Shield, RefreshCw, Eye, EyeOff, Sparkles, Palette, Tags, MapPin, Clock, ListTree, GitGraph, Image as ImageIcon, Bell, LayoutPanelLeft, Wrench, MessageSquare, ExternalLink } from 'lucide-react';
+import { X, Check, AlertCircle, Settings as SettingsIcon, Zap, Shield, RefreshCw, Eye, EyeOff, Sparkles, Palette, Tags, MapPin, Clock, ListTree, GitGraph, Image as ImageIcon, Bell, LayoutPanelLeft, Wrench, MessageSquare, ExternalLink, LogOut } from 'lucide-react';
 import { useLLM } from '../hooks/useLLM';
 import { getMaxTabs, setMaxTabs } from '../hooks/useFiles';
 import { ThemePicker } from '../components/ThemePicker';
 import { useAuthContext } from '../features/auth/AuthProvider';
 import type { ToolPermissions, ImageGenStatus as ImageGenStatusType, CodexLoginSession, CodexProbe, CodexStatus } from '../services/api';
-import { getImageGenerationStatus, testZImageConnection, saveUserSettings, getCodexLoginStatus, getCodexProbe, getCodexStatus, startCodexLogin } from '../services/api';
+import { getImageGenerationStatus, testZImageConnection, saveUserSettings, getCodexLoginStatus, getCodexProbe, getCodexStatus, logoutCodex, startCodexLogin } from '../services/api';
 
 // Static provider presets for manual selection
 
@@ -409,6 +409,21 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
     await handleStartCodexLogin('browser');
   }, [handleStartCodexLogin]);
 
+  const handleCodexSignOut = useCallback(async () => {
+    setCodexLoading(true);
+    setCodexError(null);
+    setCodexLogin(null);
+    try {
+      await logoutCodex();
+      setCodexProbe(null);
+      await handleRefreshCodexStatus();
+    } catch (err: any) {
+      setCodexError(err.message || 'Codex sign-out failed.');
+    } finally {
+      setCodexLoading(false);
+    }
+  }, [handleRefreshCodexStatus]);
+
   const handleCodexReasoningChange = useCallback(async (reasoningEffort: string) => {
     setFormCodexReasoning(reasoningEffort);
     await saveCodexSettings({ reasoningEffort });
@@ -681,14 +696,25 @@ export function Settings({ onClose, onOpenMaintenance }: SettingsProps) {
                       </div>
                     )}
 
-                    <button
-                      onClick={handleCodexSignIn}
-                      disabled={codexLoginDisabled}
-                      className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-colors hover:brightness-110 disabled:opacity-50"
-                    >
-                      <ExternalLink size={13} />
-                      {codexConnected ? 'Signed In' : codexLoading ? 'Opening...' : 'Sign In'}
-                    </button>
+                    {codexConnected ? (
+                      <button
+                        onClick={handleCodexSignOut}
+                        disabled={codexLoading}
+                        className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-red-500/15 text-red-300 transition-colors hover:bg-red-500/25 disabled:opacity-50"
+                      >
+                        <LogOut size={13} />
+                        {codexLoading ? 'Signing Out...' : 'Sign Out'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleCodexSignIn}
+                        disabled={codexLoginDisabled}
+                        className="inline-flex min-h-9 w-full items-center justify-center gap-1.5 whitespace-nowrap px-3 py-1.5 text-xs rounded-md bg-[var(--primary-hex)] text-[var(--primary-fg-hex)] transition-colors hover:brightness-110 disabled:opacity-50"
+                      >
+                        <ExternalLink size={13} />
+                        {codexLoading ? 'Opening...' : 'Sign In'}
+                      </button>
+                    )}
                   </div>
 
                   <div>

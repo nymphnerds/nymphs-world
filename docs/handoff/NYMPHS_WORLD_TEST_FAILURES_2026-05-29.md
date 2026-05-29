@@ -130,6 +130,14 @@ Follow-up repair in `0.2.12`:
 - The module-owned `stop` action is labeled `Close UI` so users see the action
   in the module action area without a Manager-owned rail change.
 
+Follow-up repair in `0.2.13`:
+
+- Added a Codex Sign Out path so testers can clear the Codex CLI login from
+  Nymphs World and retest browser sign-in without leaving the app.
+- The backend uses the official `codex logout` CLI command and clears pending
+  local Codex login sessions.
+- The Settings panel switches the signed-in Codex button to `Sign Out`.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -159,6 +167,8 @@ Focused server result after `0.2.9`: 2 test files, 31 tests passed.
 Focused Codex service result after `0.2.10`: 1 test file, 6 tests passed.
 Focused Codex result after `0.2.11`: 2 test files, 7 tests passed.
 Update lifecycle script result after `0.2.12`: syntax check passed.
+Focused Codex sign-out result after `0.2.13`: service/route tests,
+client typecheck, and production client build passed.
 
 ## Root Workspace Vitest Startup Failure
 

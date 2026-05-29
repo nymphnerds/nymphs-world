@@ -5,6 +5,7 @@ vi.mock('../../../src/services/codexService.js', () => ({
   getCodexLoginUrl: vi.fn(),
   getCodexLoginStatus: vi.fn(),
   getCodexStatus: vi.fn(),
+  logoutCodex: vi.fn(),
   openCodexLoginSession: vi.fn(),
   openExternalUrl: vi.fn(),
   readCodexAccount: vi.fn(),

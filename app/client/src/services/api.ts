@@ -551,6 +551,18 @@ export async function getCodexLoginStatus(loginId: string): Promise<CodexLoginSe
   return res.json();
 }
 
+export async function logoutCodex(): Promise<{ signedOut: boolean; message?: string }> {
+  const res = await authFetch(`${API_BASE}/codex/logout`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || 'Codex sign-out failed');
+  }
+  return res.json();
+}
+
 export async function sendChat(
   message: string,
   history: ChatMessage[],

@@ -4,6 +4,21 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.13 - 2026-05-29 Codex Sign Out
+
+Changed:
+
+- Added a Codex Sign Out button so testers can clear the Codex CLI login and
+  rerun the browser sign-in flow.
+- The server now exposes an authenticated Codex logout endpoint that calls the
+  official `codex logout` command instead of touching token files directly.
+
+Verified:
+
+- Codex service, route, and Settings page syntax checks passed.
+- Focused Codex service and redirect tests passed.
+- Client typecheck and production build passed.
+
 ## 0.2.12 - 2026-05-29 Restart Running Server On Update
 
 Changed:

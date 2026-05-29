@@ -4,6 +4,7 @@ import {
   getCodexLoginUrl,
   getCodexLoginStatus,
   getCodexStatus,
+  logoutCodex,
   openCodexLoginSession,
   openExternalUrl,
   readCodexAccount,
@@ -44,6 +45,18 @@ router.get('/probe', async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(502).json({ error: error.message });
+  }
+});
+
+router.post('/logout', async (req, res) => {
+  try {
+    const result = await logoutCodex();
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      error: error.message,
+      details: error.details || null,
+    });
   }
 });
 

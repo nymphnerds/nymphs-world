@@ -435,6 +435,34 @@ async function getCodexStatus() {
   };
 }
 
+async function logoutCodex() {
+  const version = await runCodex(['--version']);
+  if (!version.ok) {
+    const err = new Error('Codex CLI is not available.');
+    err.statusCode = 503;
+    err.details = version.stderr || version.error || 'Codex CLI could not be executed.';
+    throw err;
+  }
+
+  const logout = await runCodex(['logout']);
+  if (!logout.ok) {
+    const err = new Error(logout.stderr || logout.error || 'Codex sign-out failed.');
+    err.statusCode = 500;
+    err.details = logout;
+    throw err;
+  }
+
+  for (const [loginId, session] of loginSessions.entries()) {
+    closeLoginSession(session);
+    loginSessions.delete(loginId);
+  }
+
+  return {
+    signedOut: true,
+    message: logout.stdout || logout.stderr || 'Signed out of Codex.',
+  };
+}
+
 async function readCodexAccount() {
   return withCodexClient(async (client) => {
     const account = await client.request('account/read', { refreshToken: false }, APP_SERVER_TIMEOUT_MS);
@@ -690,6 +718,7 @@ export {
   getCodexLoginUrl,
   getCodexLoginStatus,
   getCodexStatus,
+  logoutCodex,
   openCodexLoginSession,
   openExternalUrl,
   readCodexAccount,
