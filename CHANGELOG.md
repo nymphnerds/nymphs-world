@@ -4,6 +4,22 @@ User-facing and module-level changes for the `nymphs-world` module.
 
 Newest entries first.
 
+## 0.2.10 - 2026-05-29 Restore Official Codex Browser Login Contract
+
+Changed:
+
+- Re-aligned browser Codex sign-in with the official Codex app-server docs:
+  `account/login/start` now sends exactly `{ "type": "chatgpt" }`.
+- Removed the non-documented `codexStreamlinedLogin` field from Nymphs World's
+  browser login request.
+- Added a focused unit test that asserts the JSON-RPC login params sent to the
+  Codex app-server.
+
+Verified:
+
+- Server Codex route/service syntax checks passed.
+- Focused Codex service tests passed: 6 tests.
+
 ## 0.2.9 - 2026-05-29 Restore Generated Codex SDK Browser Login Shape
 
 Changed:

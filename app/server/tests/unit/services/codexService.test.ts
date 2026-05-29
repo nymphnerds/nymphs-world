@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { execFile, spawn } from 'child_process';
 import { EventEmitter } from 'events';
+import { PassThrough } from 'stream';
 
 vi.mock('child_process', () => ({
   execFile: vi.fn(),
@@ -16,6 +17,43 @@ function mockCodexResponse(stdout: string, stderr = '', error: any = null) {
   mockExecFile.mockImplementationOnce(((_bin: string, _args: string[], _opts: any, cb: any) => {
     cb(error, stdout, stderr);
   }) as any);
+}
+
+function mockAppServer(assertLoginParams: (params: any) => void) {
+  const stdout = new PassThrough();
+  const stderr = new PassThrough();
+  const child = Object.assign(new EventEmitter(), {
+    stdout,
+    stderr,
+    killed: false,
+    kill: vi.fn(),
+    stdin: {
+      writable: true,
+      write: vi.fn((chunk: string) => {
+        const message = JSON.parse(String(chunk));
+        if (message.method === 'initialize') {
+          stdout.write(`${JSON.stringify({ id: message.id, result: {} })}\n`);
+          return true;
+        }
+        if (message.method === 'account/login/start') {
+          assertLoginParams(message.params);
+          stdout.write(`${JSON.stringify({
+            id: message.id,
+            result: {
+              type: message.params.type,
+              loginId: 'login-123',
+              authUrl: 'https://chatgpt.com/auth?client_id=test&state=abc',
+            },
+          })}\n`);
+          return true;
+        }
+        return true;
+      }),
+    },
+  });
+
+  mockSpawn.mockImplementationOnce((() => child) as any);
+  return child;
 }
 
 describe('codexService', () => {
@@ -62,6 +100,24 @@ describe('codexService', () => {
     mockCodexResponse('', 'standalone Codex install not found', { code: 1, message: 'failed' });
 
     await expect(startCodexLogin('device-code')).rejects.toThrow(/app-server is not available/);
+  });
+
+  it('starts browser login with the documented ChatGPT app-server params', async () => {
+    mockCodexResponse('codex-cli 1.2.3');
+    mockCodexResponse('Not logged in');
+    mockCodexResponse('{"cliVersion":"1.2.3","appServerVersion":"1.2.3"}');
+    mockAppServer((params) => {
+      expect(params).toEqual({ type: 'chatgpt' });
+    });
+
+    const login = await startCodexLogin('browser');
+
+    expect(login).toMatchObject({
+      loginId: 'login-123',
+      method: 'browser',
+      status: 'pending',
+      authUrl: 'https://chatgpt.com/auth?client_id=test&state=abc',
+    });
   });
 
   it('opens WSL browser login through the Windows URL handler so OAuth query params stay intact', async () => {

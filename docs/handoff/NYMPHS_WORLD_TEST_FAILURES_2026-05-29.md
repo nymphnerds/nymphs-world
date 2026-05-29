@@ -99,6 +99,16 @@ Follow-up repair in `0.2.9`:
   `explorer.exe` opens the returned `authUrl` first, with PowerShell fallback.
 - Kept `cmd.exe start` out of the OAuth launch path.
 
+Follow-up repair in `0.2.10`:
+
+- Checked the official OpenAI Codex app-server docs on 2026-05-29.
+- The documented browser ChatGPT flow is `account/login/start` with exactly
+  `{ "type": "chatgpt" }`, then opening the returned `authUrl` and waiting for
+  `account/login/completed`.
+- Removed the undocumented `codexStreamlinedLogin` field restored in `0.2.9`.
+- Added a focused unit test that asserts the JSON-RPC login params sent to the
+  Codex app-server.
+
 Related UI regression:
 
 - Saved Codex settings did not always hydrate the LLM settings form, so the UI
@@ -125,6 +135,7 @@ Focused server result after `0.2.6`: 2 test files, 31 tests passed.
 Focused server result after `0.2.7`: 2 test files, 31 tests passed.
 Focused server result after `0.2.8`: 2 test files, 31 tests passed.
 Focused server result after `0.2.9`: 2 test files, 31 tests passed.
+Focused Codex service result after `0.2.10`: 1 test file, 6 tests passed.
 
 ## Root Workspace Vitest Startup Failure
 
